@@ -294,3 +294,80 @@ As seen in the above examples, modules can use Jinja2 syntax to reference variab
 
 The above task uses a Jinja2-formatted template file to configure an Nginx web server.
 
+## templates, variables, and facts
+
+Ansible utilizes two essential components for managing configurations: variables and templates.
+
+In Ansible, configuration files can be generated dynamically during playbook execution using the standard Ansible module `ansible.builtin.template`. This module takes a Jinja2 template and processes it to create the appropriate configuration file based on the provided data.
+
+><span style="color:#668cff">Templates</span> are files that define the structure and contents of configuration files or scripts. These files are written in Jinja2 format and have a `.j2` extension. They can contain placeholders for variables, which are replaced with actual values when the template is processed.
+
+- Jinja2 employs the following syntax:
+
+	- `{% %}` for control flow statements, such as loops and conditionals
+	
+	- `{{ }}` for expressions to output the values of variables
+	
+	- Filters can be used to modify the values of the variables; for example, `{{ variable | upper }}` converts a string to uppercase.
+
+Templates are a key element of the automation of Ansible configuration management.
+Multiple systems can be configured with one command: all the necessary configuration files can be generated from a single template, then each populated with its own data based on the supplied variables.
+
+><span style="color:#668cff">Variables</span> are used to store configuration data that can be reused in playbooks and templates. They are typically defined in YAML format and consist of key-value pairs. Variables can be defined in various ways — at the playbook level, in the inventory, or through variable files.
+
+In addition to user-defined variables, Ansible can automatically gather information about managed nodes, such as their OS version, hostname, IP address, and more. Such data is called facts.
+
+>Facts are data collected from the managed nodes and returned to the Ansible Controller.
+
+Below is an example of a simple Nginx web server configuration template. The template dynamically substitutes two variables with respective values from a dedicated file: `http_port` and `server_name`.
+
+Template file: `templates/nginx.conf.j2`
+
+```JS
+server {
+	listen {{ http_port }};
+	server_name {{ server_name }};
+
+	location / {
+		proxy_pass http://localhost:5000;
+	}
+}
+```
+
+Variables: `group_vars/webservers.yaml`
+
+```YAML
+http_port: 80
+server_name: "web.example.com"
+```
+
+Playbook: `deploy_nginx.yaml`
+
+```YAML
+- name: Nginx Configuration
+  hosts: webservers
+  tasks:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+      become: yes
+      
+    - name: Generate Nginx configuration file
+      template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+      notify: Restart Nginx
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+```
+
+- The `nginx.conf.j2` file is a template used to generate the Nginx configuration file. It uses Jinja2 syntax to include variables named `http_port` and `server_name`. These variables are defined in the variable file `group_vars/webservers.yaml`.
+
+- The playbook, `deplpy_nginx.yaml`, runs on all servers in the `webservers` group within a configured inventory. The playbook ensures that Nginx is installed on each server and then generates the Nginx configuration file using the template. The notify directive triggers the defined `Restart Nginx` handler to restart Nginx, applying the new configuration.
+
+>Ansible handlers are special tasks triggered by other tasks within a playbook. They are used to perform specific actions, such as restarting services, updating configurations, or executing custom scripts, in response to changes made by other tasks.
