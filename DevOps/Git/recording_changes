@@ -2,10 +2,17 @@ As a powerful version control system, Git allows developers to manage changes to
 
 ## Git
 
-Git is a distributed version control system that stores versions of a project in a project repository. Each version is recorded as a commit, which is essentially a snapshot of the entire project at a specific moment in time. A Git repository represents the history of all the changes made to the project, a series of versions, or snapshots. Moreover, Git provides the flexibility to decide which changes will be recorded in the next version of the project and which will not.
+Git is a mature, actively maintained open-source project originally developed in 2005 by Linus Torvalds. It is by far the most widely used version control system. 
 
-Given this, the version control process with Git classifies directories and files within the repository into different categories. Before a modified file is saved in the next snapshot of the project, it undergoes several stages in order. Understanding those changes is crucial to work with Git. 
-## tracked and untracked files
+Git is a distributed version control system that stores a full project history, including all its versions, in a project repository. 
+
+- Each version is recorded as a commit, which is essentially a snapshot of the entire project at a specific moment in time. 
+- A Git repository represents the history of all the changes made to the project as a series of commits, or snapshots. 
+- Git provides the flexibility to decide which changes will be recorded in the next version of the project and which will not, and it also allows reverting the project to any of its previously recorded states.
+
+Given this, the version control process in Git classifies directories and files within the repository into different categories. Before a modified file is saved in the next snapshot of the project, it undergoes several stages in order. Understanding these changes is crucial for working with Git. 
+
+## Tracked and Untracked Files
 
 In Git, every file within a repository can exist in one of two distinct states: tracked or untracked.
 
@@ -40,13 +47,12 @@ git status -s
 ```
 
 >Later on, unless otherwise specified, the term 'files' in this article will refer specifically to tracked files, as these are the files that Git works with.
-## the three states
+## The Three States
 
 Each file in a Git repository can exist in one of three distinct stages:
 - <span style="color:#668cff">Modified</span>
 - <span style="color:#668cff">Staged</span> 
 - <span style="color:#668cff">Committed</span>
-
 #### modified
 
 >A <span style="color:#668cff">modified</span> file is a file that has been changed in the working directory since the last commit, and these changes have not yet been staged for the next commit.
