@@ -83,8 +83,6 @@ touch /etc/ansible/hosts
 	- Network connectivity between the controller and the nodes
 	- Proper SSH configuration
 
-- Everything required for an Ansible Controller to manage and configure nodes is ability to connect to these nodes
-
 - An inventory file can be written in either of two formats: INI or YAML. 
 
 Below is an example of an INI Inventory File:
