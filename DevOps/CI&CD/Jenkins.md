@@ -189,110 +189,14 @@ For example, the AWS Jenkins plugin can be used to integrate AWS CLI with Jenkin
 Jenkins files can be installed with a command line, by copying them into the plugin directory, or using a Jenkins Web GUI.
 
 >Jenkins provides a web-based interface allows users to create jobs, configure settings, and monitor builds. Users can easily view build history, logs, and results via this interface.
-## Working with Jenkins
-
-#### Installation and configuration
-
-Jenkins may operate as a server on various operating systems, including Windows, macOS, and, most notably, Linux. Jenkins requires a Java 8 virtual machine or higher; it can also run on Oracle JRE or OpenJDK. Jenkins can also be installed in a Docker container or run in a Kubernetes cluster.
-
-Jenkins Documentation includes a comprehensive guidance on how to install Jenkins on different platforms and solutions. It can be found here: https://www.jenkins.io/doc/book/installing/linux/.
-###### Installing and running Jenkins in Docker
-
-The easiest way to install and run Jenkins is by using Docker. This solution is cross-platform and suitable for use in containerized environments.
-
-- The official Jenkins Docker image can be found by the name [`jenkins/jenkins` (DockerHub)](https://hub.docker.com/r/jenkins/jenkins) . This image contains the current LTS (Long-Term Support) Jenkins release. 
-
-A Docker container with a Jenkins server can be created in two ways: either by specifying all the necessary arguments in the command line, including the Jenkins Docker image, or by building a new container image from a Dockerfile. 
-
-A Jenkins container can be run with just one command:
-
-```bash
-docker run --name jenkins-container -p 8080:8080 -p 50000:50000 -d -v jenkins-data:/var/jenkins jenkins/jenkins
-```
-
-- `--name jenkins-container` sets a name for the container.
-- `-p host_port:container_port` maps, or publishes, a host port to a container port, providing access to the application inside the container.
-
-- Port `8080`
-	- The default port Jenkins runs on. The Jenkins dashboard, the web GUI, listens on this port.
-- Port `50000`
-	- The default port used for communication between the Jenkins master and agents.
-
-- `-v jenkins-data:/var/jenkins_home` binds a volume named `jenkins-data` to the `/var/jenkins_home` directory inside the container. The volume will be automatically created. 
-- `jenkins/jenkins` specifies the Jenkins Docker image.
-
->The `/var/jenkins_home` directory is the directory where all the Jenkins builds and configurations will be stored. 
-
-After the above command, the Jenkins container should be up and running.
-
-```bash
-docker ps
-```
-
-```bash
-CONTAINER ID   IMAGE             COMMAND                  CREATED         STATUS         PORTS                                                                                      NAMES
-a59be68f440c   jenkins/jenkins   "/usr/bin/tini -- /u…"   4 seconds ago   Up 3 seconds   0.0.0.0:8080->8080/tcp, :::8080->8080/tcp, 0.0.0.0:50000->50000/tcp, :::50000->50000/tcp   jenkins-container
-
-```
-
----
-
-In order to install additional software inside the Jenkins container, it is more convenient to build a separate Docker container image, based on `jenkins:jenkins`, and specify all the necessary packages to be installed during the image build in the Dockerfile.
-
-```Dockerfile
-FROM jenkins/jenkins
-RUN apt update
-RUN jenkins-plugin-cli --plugins git
-```
-
-- After the build, the image above will contain the Git plugin installed with the `jenkins-plugin-cli` command.
-
-To build the image:
-
-```bash
-docker build -t jenkins-image .
-```
-
----
-#### Accessing Jenkins dashboard
-
-After Jenkins container is launched, the GUI web interface is accessible from the localhost IP address (`127.0.0.1` or `localhost`) on port `8080`:
-
-```bash
-http://127.0.0.1
-```
-
-Upon accessing, Jenkins will prompt for a password. 
-
-![jenkins_login](https://github.com/user-attachments/assets/880a4e15-f70d-4253-8ab6-3aac8957ec0e)
-
-The password can be found at `/var/jenkins_home/secrets/initialAdminPassword`:
-
-```bash
-docker exec -it jenkins-container cat /var/jenkins_home/secrets/initialAdminPassword
-```
-```
-<the password will be displayed>
-```
-
-After authorization, the dashboard displays a panel which allows the user to choose either to install suggested plugins or choose what to install manually. For a general setup, the former options is usually suitable.  
-
-![customize_jenkins](https://github.com/user-attachments/assets/ed7f57d0-ab2c-4222-990f-62d8e0cb80db)
-
-With `Install suggested plugins` selected, Jenkins will start the installation of commonly used software.
-
-![installing_plugins_jenkins](https://github.com/user-attachments/assets/0cf2eb75-0775-46f9-a23d-df904a0bb2a2)
-
-Then, Jenkins will suggest to create an admin user.
-
-![jenkins_dashboard_create_user](https://github.com/user-attachments/assets/86ead062-bc84-4f9d-b55b-e1e83c141091)
-
-After the user has been created, Jenkins allows to customize the URL used to access the dashboard:.
-
-![instance_configuration](https://github.com/user-attachments/assets/f257cb48-0f2d-4dd1-8941-3005ba8d1314)
-
-After the above configuration, the Jenkins setup is complete and the dashboard ready for use.
 
 ![jenkins_is_ready](https://github.com/user-attachments/assets/8a50e704-ef11-43ff-95d1-c01335eba025)
 ![jenkins_dashboard](https://github.com/user-attachments/assets/6d19e4b5-1db5-4908-a06e-3dc32a93044b)
+
+## Conclusion
+
+In conclusion, Jenkins stands out as a powerful and versatile automation server that is crucial for organizations seeking to enhance their software development practices through CI/CD pipelines. Its robust architecture, extensive plugin ecosystem, and strong community support enable teams to not only automate the building, testing, and deployment of applications but also to streamline various other tasks, paving the way for improved efficiency and reliability in software delivery.
+
+By leveraging Jenkins effectively, developers can create complex workflows tailored to their specific needs, allowing for rapid iterations and faster time-to-market. Understanding the foundational principles of Jenkins, from its master-agent structure to the nuances of job types and pipelines, equips teams with the knowledge necessary to harness this tool's full potential. As we continue to transition towards more automated and DevOps-centric methodologies, Jenkins remains a critical asset in achieving excellence in modern software development practices. Thus, embracing Jenkins not only fosters a culture of continuous improvement but also positions organizations to thrive in a highly competitive landscape.
+
 
