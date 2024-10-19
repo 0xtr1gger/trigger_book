@@ -5,51 +5,61 @@ In the current fast-paced software development environment, the ability to deliv
 >Continuous Integration and Continuous Delivery (CI/CD) is a software development practice that combines Continuous Integration (CI) and Continuous Delivery (CD) to automate the integration, testing, and deployment of code changes. 
 
 Alright, let's break this down. 
-#### Continuous Delivery 
 
->Continuous Integration (CI) is a practice of frequently committing code changes to a shared repository and then testing and verifying that these changes can be safely merged into a project.
+#### Continuous Integration 
 
-- In essence, developers follow the CI approach by regularly implementing small changes in the code, which are automatically tested and verified before being merged into the project.
+>Continuous Integration (CI) is a practice of frequently committing code changes to a shared repository, and then automatically testing these changes to verify that they can be safely merged into a project.
 
-This means that a developer, instead of uploading large bulks of code once in a while, frequently pushes new functionality and changes into a shared repository, where they can be built and tested. This helps to identify conflicts and issues during the early development stages. Additionally, CI facilitates collaboration, since developers working on the project can inspect the changes made to the shared repository, which leads to a more transparent development process.
+- The CI approach assumes that developers regularly (often several times a day) commit small, incremental changes to the code. After each commit, automated tests are run to verify that the new code works as expected with the existing project. This helps to identify conflicts and issues during the early development stages.
 
----
+- Continuous Integration aims to keep the codebase in a working state all the time, making it possible to release the software at any moment.
 
-For example, a project repository might have several branches, one of them being the main line of the development, the `main` branch, and the other dedicated for designing new functionality and fixing issues, for example, `feature`. 
+This contrasts with traditional software development, where programmers would occasionally commit large chunks of code. This would lead to potential conflicts and a more complicated process of fixing errors, as the system would typically be in a non-working state during integration.
 
-Changes made to the source code trigger automatic tests run against these changes. 
+- CI facilitates collaboration, since developers working on the project can inspect the changes made to a shared repository and give feedback easily. This leads to a more transparent development process.
 
-While one developer is working on the feature, the others might continue to commit changes to the `main` branch. CI conventionally encourages to regularly merge changes made to the `main` branch back into the `feature` branch through the process called pull requests. This helps to stay up-to-date with the main project and minimizes potential merge conflicts in the future. 
-
-Changes made to the source code trigger automatic tests running on different levels, such as unit and functional tests. Tests can also be scheduled to run on a regular basis, such as once a day, rather than every commit.
-
-Once the functionality is complete and tested on the `feature` branch (taking into account any modifications made to the main branch), it can be merged into the `main` branch.
-
-Upon the merge, automatic tests are run again to ensure that the software is working properly with the new functionality integrated.
+- Additionally, CI relies heavily on version control systems (e.g., Git) to manage and track changes in code over time.
 
 ---
 
-- CI ensures that code changes are regularly merged into the main branch. Therefore, CI is a solution to the problem of having too many branches of an app in development at once that might conflict with each other.
+- Continuous Integration encourages the practice of regularly pulling changes from the branch into feature branches to minimize any potential issues during merging.
 
-Key takeaways:
+- Once a feature is complete, a developer creates a pull request (PR) or merge request (MR) to propose merging their feature branch back into the main branch. The PR is usually reviewed by team members to provide an opportunity for feedback and discussion before the code is merged.
 
-- It is recommended to merge changes from `main` into the `feature` branch regularly to keep it updated with the latest code changes made to `main`.
-- Once the feature is complete and tested, the changes from the `feature` branch should be merged into the `main` branch.
+- When a PR is created, CI tools typically trigger automated tests. If any tests fail, the developer can address the issues before merging.
 
+- Once the PR is approved, the feature branch can be merged into the main branch.
+  
 #### CD: Continuous Deployment and Continuous Delivery
+
+>Continuous Delivery (CD) is a software development approach that involves producing software in short cycles, ensuring that the software can be reliably released at any time.
+
+- The primary goal of Continuous Delivery is to keep the software in a state that is always ready to be deployed to production. This helps to integrate a proactive approach to software delivery to avoid panic releases or last-minute fixes.
+
+- Continuous Delivery emphasizes comprehensive automated testing, including unit, integration, and acceptance tests to minimizes defects and ensure the code is of high quality during the whole development process. 
+
+- Code changes are typically deployed to a staging environment that mirrors the production environment as closely as possible. In this stage, software can undergo further testing to evaluate behavior and performance. 
+- This is one of the key concepts that CD employs: testing and production environments should be identical.
+
+- Although the code is built, tested, and prepared for release automatically, the final step — the deployment to production — is performed manually; the code is reviewed by QA or operational teams before the changes can be released. In this stage, the software can be examined to ensure compliance with business and quality standards. This gives flexibility and control over when to release.
+
+- Continuous Delivery creates a faster feedback loop, which significantly enhances the ability to respond to user needs and correct issues more swiftly.
+
+---
+
+Continuous Deployment takes one step further. With Continuous Deployment, code changes that have passed automated tests are automatically deployed to the production environment without the need for manual approval.
+
+This means that every change that passes automated tests is immediately released into production.
 
 >Continuous Deployment (CD) is a practice to automatically deploying code changes to production after the changes have passed through an automated testing phase. 
 
-This allows developers to produce software in short cycles, introducing updates frequently. 
+- Unlike Continuous Delivery, where a manual step (approval) is typically required before deployment to production, Continuous Deployment automates the entire release process once the code passes all necessary tests. 
 
->Continuous Delivery (CD) is a practice of frequently delivering code changes to a QA and Ops for testing. With this approach, software is tested manually in a staging area, and is accepted to production only after a manual review. 
+- Because changes are deployed as soon as they’re ready, developers receive even more rapid feedback about their changes in real-world conditions. 
 
-The key difference between Continuous Deployment and Continuous Delivery lies in automation. 
+- Continuous Deployment builds upon the foundation of Continuous Delivery. Specifically, for Continuous Deployment to be possible, a solid Continuous Delivery pipeline must be in place to automate the testing and ensure the code is always in a deployable state.
 
-Continuous Delivery automates the build and testing, as well as deployment, however, there is always someone who is responsible for approving the changes before deploying them into production. In contrast, in Continuous Deployment, changes are immediately deployed into production after passing through automated tests and verification, with minimal human interaction.  
-
-- Continuous Delivery ensures that software is always ready for release by automating the build, testing, and deployment processes. However, human approval is still required before changes are deployed to production. 
-- Continuous Deployment, in contrast, automatically releases changes to production once they pass automated tests and verification, with minimal human interaction.
+- Successful implementation of Continuous Deployment often requires a cultural shift within organizations, promoting trust among teams and embracing the ability to fail fast and recover quickly.
 
 |                         | Continuous Delivery                                                                             | Continuous Deployment                                                          |
 | ----------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
@@ -63,6 +73,7 @@ Continuous Delivery automates the build and testing, as well as deployment, howe
 | **Team Collaboration**  | Collaboration is important, but with more coordination and validation                           | Close collaboration between teams is crucial                                   |
 | **Adoption Complexity** | Easier to adopt, with gradual automation                                                        | Requires a mature and well-automated development and deployment infrastructure |
 | **Use Cases**           | Suitable for organizations with regular release cycles and a focus on stability and reliability | Ideal for organizations with high demand for rapid changes and innovation      |
+
 
 ## CI/CD pipelines
 
