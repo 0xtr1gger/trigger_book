@@ -190,8 +190,6 @@ Jenkins files can be installed with a command line, by copying them into the plu
 
 >Jenkins provides a web-based interface allows users to create jobs, configure settings, and monitor builds. Users can easily view build history, logs, and results via this interface.
 
-![jenkins_is_ready](https://github.com/user-attachments/assets/8a50e704-ef11-43ff-95d1-c01335eba025)
-![jenkins_dashboard](https://github.com/user-attachments/assets/6d19e4b5-1db5-4908-a06e-3dc32a93044b)
 
 ## Conclusion
 
