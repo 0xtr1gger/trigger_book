@@ -1,17 +1,5 @@
 
 
-- [x] What is this
-- [x] How it works (briefly)
-- [x] Workflow example 
-- [x] How it's set up
-- [x] Benefits
-- [ ] Verify everything
-
-TBD:
-- Lifecycle hooks such as PreSync, Sync, and PostSync
-- Sync policies
-
-
 ## Argo CD
 
 >[Argo CD](https://argo-cd.readthedocs.io/en/stable/) is CD tool designed specifically for Kubernetes environments. It acts as a Kubernetes-native controller that continuously monitors the live stat of applications running in Kubernetes clusters and compares it against the desired target state defined declaratively in Git repositories.
