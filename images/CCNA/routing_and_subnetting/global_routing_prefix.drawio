@@ -1,0 +1,46 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" version="28.2.5">
+  <diagram name="Page-1" id="2VLypHIjMcvE7QoE9nT_">
+    <mxGraphModel dx="1608" dy="991" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-1" value="" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=light-dark(#00D7E1,#FFCC99);fillColor=none;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="320" y="120" width="320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-4" value="48 bits" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=sans serif;" vertex="1" parent="1">
+          <mxGeometry x="85" y="90" width="70" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-7" value="64 bits" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=sans serif;" vertex="1" parent="1">
+          <mxGeometry x="445" y="90" width="70" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-11" value="Host" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=monospace;fontColor=light-dark(#00D7E1,#FFCC99);" vertex="1" parent="1">
+          <mxGeometry x="450" y="125" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-18" value="" style="shape=curlyBracket;whiteSpace=wrap;html=1;rounded=1;labelPosition=left;verticalLabelPosition=middle;align=right;verticalAlign=middle;rotation=-90;strokeWidth=2;strokeColor=light-dark(#FFFFFF,#FFFFFF);" vertex="1" parent="1">
+          <mxGeometry x="150" y="20" width="20" height="320" as="geometry" />
+        </mxCell>
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-19" value="Prefix ID&lt;br&gt;Subnet ID" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=sans serif;" vertex="1" parent="1">
+          <mxGeometry x="110" y="190" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-48" value="Global unicast addresses" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=20;fontFamily=sans serif;" vertex="1" parent="1">
+          <mxGeometry x="190" y="40" width="260" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-50" value="" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#8B89FF);fillColor=none;strokeWidth=2;fontColor=light-dark(#000000,#6666FF);" vertex="1" parent="1">
+          <mxGeometry x="240" y="120" width="80" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-51" value="16 bits" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=sans serif;" vertex="1" parent="1">
+          <mxGeometry x="245" y="90" width="70" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-52" value="Subnet" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=monospace;fontColor=light-dark(#000000,#8B89FF);" vertex="1" parent="1">
+          <mxGeometry x="240" y="125" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-53" value="" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=light-dark(#00D7E1,#91E2FF);fillColor=none;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry y="120" width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Z8XGZXpH-Xz-oqejpn18-54" value="Global routing prefix" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontFamily=monospace;fontColor=light-dark(#00D7E1,#91E2FF);labelBackgroundColor=default;" vertex="1" parent="1">
+          <mxGeometry x="5" y="125" width="230" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
