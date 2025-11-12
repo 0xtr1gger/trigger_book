@@ -679,30 +679,23 @@ IP MTU settings on the routers must also match.
 
 ## OSPF network types
 
-There are five OSPF **network types**:  
+| Network type                          | Link types                                                      | DR/BDR? | Hello | Dead  | Notes                                                                                                         |
+| ------------------------------------- | --------------------------------------------------------------- | ------- | ----- | ----- | ------------------------------------------------------------------------------------------------------------- |
+| **Broadcast**                         | Ethernet, FDDI (Fiber Distributed Data Interface)               | Yes     | 10 s  | 40 s  | The DR generates a Type 2 Network LSA to represent the multi-access segment.                                  |
+| **Non-broadcast multi-access (NBMA)** | Frame relay                                                     | Yes     | 30 s  | 120 s | Multicast is unavailable; neighbors are defined statically; Hello are unicast.                                |
+| **Point-to-point**                    | HDLC, PPP;<br>Serial, E1/T1 leased lines, GRE and IPsec tunnels | No      | 10 s  | 40 s  | This is the most efficient network type for links with only two routers.                                      |
+| **Point-to-multipoint**               | Frame relay, DMVPN<br>(not configured by default)               | No      | 30 s  | 120 s | Neighbors are discovered automatically; each router forms a direct adjacency with its neighbors without a DR. |
+| **Point-to-multipoint non-broadcast** | Non-broadcast hub-and-spoke WAN; DMVPN                          | No      | 30 s  | 120 s | Multicast is unavailable; neighbors are defined statically; Hello are unicast.                                |
 
-- **Broadcast**
-	- Enabled by default on **Ethernet** and **FDDI (Fiber Distributed Data Interface)** interfaces.
-	- Multicast updates are sent, so manual configuration of neighbor routers with the **`neighbor`** command is not required.
-	- To configure, issue `ip ospf network broadcast`.
+>[!important] Network type is configured per-interface.
 
-- **Non-broadcast**, aka **non-broadcast multi-access (NBMA)**
-	- DR and BDR elections are performed.
-	- Multicasts are not allowed, so manual configuration of neighbor routers with the `neighbor` command is required so that OSPF sends unicast updates. 
-	- To configure, issue `ip ospf network non-broadcast`.
-
-- **Point-to-point**
-	- Enabled by default on **HDLC (High-Level Data Link Control)** and **PPP (Point-to-Point Protocol)** serial interfaces.
-	- DR and BDR elections are not performed.
-	- Multicast updates are sent, so manual configuration of neighbor routers with the **`neighbor`** command is not required.
-	- To configure, issue `ip ospf network point-to-point`.
-
-- **Point-to-multipoint broadcast**
-	- Operate just like OSPF point-to-point networks except the **hello** timer is set to **30 seconds** and the **dead timer** is set to **120 seconds** by default.
-	- To configure, issue `ip ospf network point-to-multipoint`.
-
-- **Point-to-multipoint non-broadcast**
-	- Operate just like OSPF point-to-multipoint broadcast networks except that multicasts cannot be sent so manual configuration of neighbor routers with the `neighbor` command is required so that OSPF sends unicast updates.
+```toml
+R1(config-if)# ip ospf network ?
+  broadcast            Specify OSPF broadcast multi-access network
+  non-broadcast        Specify OSPF NBMA network
+  point-to-multipoint  Specify OSPF point-to-multipoint network
+  point-to-point       Specify OSPF point-to-point network
+```
 
 | Network Type                                    | Description                                                                               | DR/BDR Election | Hello/Dead Timers (default) | Typical Use Case                |
 | ----------------------------------------------- | ----------------------------------------------------------------------------------------- | --------------- | --------------------------- | ------------------------------- |

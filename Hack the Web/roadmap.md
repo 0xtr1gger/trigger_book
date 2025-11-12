@@ -7,6 +7,6 @@ created: 2025-11-10 01:55:02
 	- [[SQL_injection]]
 
 - File-related vulnerabilities:
-	- [[LFI_and_directory_traversal]]
+	- [[file_inclusion]]
 	- [[RFI]]
 	- 

@@ -4,6 +4,20 @@ tags:
   - IOS
   - security
 ---
+
+
+```
+            256 _
+225.255.255.224
+            ---
+             32
+             
+10.10.2.0-31
+        32-63
+        64-95
+        96-127
+```
+
 ## Console port security
 
 >The **console port** provides local, physical access to a Cisco device for initial configuration or troubleshooting.

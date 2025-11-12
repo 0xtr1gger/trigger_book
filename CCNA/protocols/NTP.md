@@ -227,6 +227,19 @@ R1(config)# ntp server <ip_address_or_hostname> prefer
 
 >[!tip] You can configure multiple NTP servers for redundancy. The `prefer` keyword designates a preferred time source.
 
+>[!note] In the case, the basic NTP client configuration is complete; nothing else needs to be done for NTP to be fully operating. 
+>- By default, NTP is enabled on all interfaces on a Cisco switch. 
+>
+>The following conditions apply to a default NTP configuration:
+>- NTP associations, such as peer or server, are not yet configured.
+>- NTP authentication is disabled.
+>- NTP access restrictions are not configured.
+>- NTP broadcast service is disabled.
+>- NTP packet source IP address is configured by the outgoing interface.
+>
+>>[!note] You do not need to configure the NTP packet source IP address (with `ntp source`) as long as the address of the outgoing interface can be used as a destination address for NTP replies.
+>
+
 - **NTP server mode**
 	- Allows a device to provide time information to NTP clients. 
 	- The device synchronizes with upstream NTP servers and then provides time services to downstream clients. 
@@ -285,7 +298,9 @@ R1(config)# interface <interface_id>
 R1(config-if)# ntp broadcast client
 ```
 
----
+>[!note] NTP broadcast messages enable an NTP client to configure its time based on NTP broadcast messages from any NTP server on the local area network (LAN).
+
+>[!warning] You can configure an interface to either send NTP broadcast messages or receive NTP broadcast messages, but not both.
 
 ```toml
 # for a multicast server
