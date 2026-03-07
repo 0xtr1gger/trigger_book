@@ -1,5 +1,5 @@
 ---
-created: 03-03-2026
+created: 2026-03-06
 tags:
   - Windows
   - password_attacks
@@ -7,7 +7,7 @@ tags:
 ---
 
 >**MITRE ATT&CK:** [`T1003.001 — OS Credential Dumping: LSASS Memory`](https://attack.mitre.org/techniques/T1003/001/).
->**Required privilege:** Local Administrator or `SYSTEM` (for `SeDebugPrivilege`). 
+>**Required privilege:** Local Administrator or `SYSTEM` (requires `SeDebugPrivilege`). 
 >**Goal:** Extract NTLM hashes, Kerberos tickets, and (sometimes) plaintext passwords from LSASS process memory.
 
 ### Table of contents
@@ -17,10 +17,10 @@ tags:
 	- [[#Live memory analysis with Mimikatz]]
 	- [[#Process memory dump + offline analysis]]
 		- [[#Acquiring memory dump]]
-			- [[#`ProcDump`]]
-			- [[#`comsvcs.dll`]]
+			- [[#ProcDump]]
+			- [[#comsvcs.dll]]
 		- [[#Extracting credentials from a memory dump]]
-		- [[#`lsassy`]]
+		- [[#lsassy]]
 - [[#References and further reading]]
 ## Understanding LSA and LSASS
 
@@ -70,7 +70,7 @@ Credentials LSASS stores in memory typically include:
 
 ## Dumping credentials from LSASS memory
 
-To read another process’s memory on Windows, you normally need the **`SeDebugPrivilege`** right. By default, this privilege is held only by local Administrators (members of the `Administrators` group) and `SYSTEM`. 
+To read another process’s memory on Windows, you normally need the **`SeDebugPrivilege`** right. By default, this privilege is held only by local Administrators (members of the `Administrators` and `Backup Operators` groups) and `SYSTEM`. 
 
 >[!tip]+
 >- Check your current privileges:
@@ -84,25 +84,26 @@ In practice, extracting credentials from LSASS memory follows one of these two s
 - **LSASS process memory dump + offline analysis** 
 
 A summary of tools:
-- [`lsassy`](https://github.com/login-securite/lsassy)
+
 - [Mimikatz](https://github.com/gentilkiwi/mimikatz)
-- [`pypykatz`](https://github.com/skelsec/pypykatz)
-- [`ProcDump`](https://docs.microsoft.com/en-us/sysinternals/downloads/procdump) (from [Sysinternals](https://docs.microsoft.com/en-us/sysinternals/))
-- `comsvcs.dll`
 - [`PowerSploit`](https://github.com/PowerShellMafia/PowerSploit)'s [`Invoke-Mimikatz.ps1`](https://github.com/PowerShellMafia/PowerSploit/blob/master/Exfiltration/Invoke-Mimikatz.ps1)
+- [`ProcDump`](https://docs.microsoft.com/en-us/sysinternals/downloads/procdump) (from [Sysinternals](https://docs.microsoft.com/en-us/sysinternals/))
+- [`pypykatz`](https://github.com/skelsec/pypykatz)
+- `comsvcs.dll`
+- [`lsassy`](https://github.com/login-securite/lsassy)
 
-
+>[!note] The techniques discussed in this article aim to retrieve users' **password hashes**, not plaintext passwords. To learn how to crack those using [[Hashcat]], see [[cracking Windows hashes_]].
 ### Live memory analysis with Mimikatz
 
-To extract credentials from a running LSASS process, you need a shell on the target with appropriate privileges. You can use [Mimikatz](https://github.com/gentilkiwi/mimikatz) for this purpose. 
+To extract credentials from a running LSASS process, you need a shell on the target with appropriate privileges. You can use [Mimikatz](https://github.com/gentilkiwi/mimikatz) for this purpose.
 
-- The `privilege::debug` module requests `SeDebugPrivilege`:
+1. Request `SeDebugPrivilege` using the `privilege::debug` module:
 
 ```powershell
 privilege::debug
 ```
 
-- The `sekurlsa::logonpasswords` module extracts all credentials from the LSASS process's memory it can find, including NTLM hashes, Kerberos tickets, and plaintext passwords:
+2. Use `sekurlsa::logonpasswords` to extracts all credentials from the LSASS process's memory it can find, including NTLM hashes, Kerberos tickets, and plaintext passwords:
 
 ```powershell
 sekurlsa::logonpasswords
@@ -139,7 +140,7 @@ Instead of scanning live LSASS memory, you can capture a process memory dump and
 > ```
 > 
 
-##### `ProcDump`
+##### ProcDump
 
 [`ProcDump`](https://docs.microsoft.com/en-us/sysinternals/downloads/procdump) (from [Sysinternals](https://docs.microsoft.com/en-us/sysinternals/)) is designed for creating process dumps for debugging, and can as well be used to dump LSASS process's memory:
 
@@ -154,7 +155,7 @@ procdump -accepteula -ma <LSASS_PID> lsass.dmp
 
 >[!note]+ `ProcDump` is a signed Microsoft library, so it's less likely to be flagged by AV or EDRs than a Mimikatz binary.
 >
-##### `comsvcs.dll`
+##### comsvcs.dll
 
 `comsvcs.dll` is a legitimate Windows system DLL located at `C:\Windows\system32\comsvcs.dll`. It's part of COM+ Component Service and ships with every Windows installation.
 The DLL has a function called **`MiniDump`** (ordinal 24), which can be used to create a [minidump of a process's memory](https://docs.datadoghq.com/security/default_rules/def-000-zzz/) .
@@ -173,9 +174,15 @@ rundll32 C:\Windows\system32\comsvcs.dll MiniDump <LSASS_PID> lsass.dmp full
 >tasklist /fi "imagename eq lsass.exe"
 >```
 
+>[!example]+
+> ![[comsvcs.dll_minidump.png]]
+> - To analyze on your local machine, transfer the dump:
+>
+> ![[copy_lsass.dmp_to_smb.png]]
 
 >[!tip]+
->One more way to create a process's memory dump in Windows is using Task Manager -> `Create Dump File`.
+>One more way to create a process's memory dump in Windows is using Task Manager -> `Create dump file`.
+>
 ### Extracting credentials from a memory dump 
 
 To analyze the acquired dump right on the target machine, you can use [Mimikatz](https://github.com/gentilkiwi/mimikatz)'s `sekurlsa::minidump` module:
@@ -190,12 +197,15 @@ Or, you can transfer the dump to your attacker box and analyse it using the [`py
 pypykatz lsa minidump lsass.dmp
 ```
 
+>[!example]+
+>![[pypykatz.png]]
+
 >[!note]+ Installation
 > ```bash
 > pip3 install pypykatz
 > ```
 
-### `lsassy`
+### lsassy
 
 >[`lsassy`](https://github.com/login-securite/lsassy) is a Python tool that can remotely extract credentials from multiple Windows hosts.
 

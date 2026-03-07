@@ -1,0 +1,17 @@
+{
+	"nodes":[
+		{"id":"2db3587aa5f26169","type":"text","text":"**Derived Session Keys**","x":-54,"y":-95,"width":271,"height":57},
+		{"id":"54be14282fcffed4","type":"text","text":"Encrypt DPAPI blob","x":-49,"y":55,"width":262,"height":62,"color":"6"},
+		{"id":"7a073810a9783fac","type":"text","text":"**Master key**","x":1,"y":-247,"width":161,"height":69,"color":"1"},
+		{"id":"3cc5047d513e15ed","type":"text","text":"Decrypts Master Key file\n(random secret stored on disk)","x":-104,"y":-378,"width":372,"height":74},
+		{"id":"6320370f0ce74094","type":"text","text":"**User password**","x":-21,"y":-609,"width":206,"height":60,"color":"1"},
+		{"id":"05652cbfa8570486","type":"text","text":"**DPAPI pre-key**\n(derived from logon secret + SID)","x":-110,"y":-504,"width":384,"height":81}
+	],
+	"edges":[
+		{"id":"9a0263709fd56427","fromNode":"6320370f0ce74094","fromSide":"bottom","toNode":"05652cbfa8570486","toSide":"top"},
+		{"id":"58babd9571bf97ca","fromNode":"7a073810a9783fac","fromSide":"bottom","toNode":"2db3587aa5f26169","toSide":"top"},
+		{"id":"641efa97548815c2","fromNode":"2db3587aa5f26169","fromSide":"bottom","toNode":"54be14282fcffed4","toSide":"top"},
+		{"id":"63dc0ce5db63d6a7","fromNode":"05652cbfa8570486","fromSide":"bottom","toNode":"3cc5047d513e15ed","toSide":"top"},
+		{"id":"9fd30eaa39b68e84","fromNode":"3cc5047d513e15ed","fromSide":"bottom","toNode":"7a073810a9783fac","toSide":"top"}
+	]
+}
