@@ -5,6 +5,7 @@ tsconfig.tsbuildinfo
 .quartz-cache
 .replit
 replit.nix
+*/.space/*
 
 # ignore Obsidian vault config
 content/.obsidian

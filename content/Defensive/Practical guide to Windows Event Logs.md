@@ -1,5 +1,10 @@
 ---
 created: 2026-03-16
+tags:
+  - defensive
+  - Windows
+  - logging
+  - monitoring
 ---
 ## Windows Event Logs
 
