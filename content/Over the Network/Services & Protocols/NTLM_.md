@@ -135,6 +135,8 @@ So, the NT hash is the *secret key material* used by NTLM for authentication. If
 
 >[!note] The NT hash is often incorrectly called "NTLM hash"; it's best to use call it **NT hash** to avoid confusion with network challenge responses.
 
+>[!note] See [[cracking Windows hashes_#NT hashes]].
+
 >[!note]- LM hash 
 >An **LM hash** (LM stands for [LAN Manager](https://en.wikipedia.org/wiki/LAN_Manager#Password_hashing_algorithm)) is an ancient legacy format now mostly disabled by default. 
 >It is generated as follows:
@@ -150,8 +152,7 @@ So, the NT hash is the *secret key material* used by NTLM for authentication. If
 > 
 > For modern Windows **LM hashes are usually disabled by default** (Vista/Server 2008 onward), and if a password is **≥15 characters**, no LM hash is generated at all.
 >
->See [`Password hashing algorithm — LAN Manager, Wikipedia`](https://en.wikipedia.org/wiki/LAN_Manager#Password_hashing_algorithm). 
-
+>See [[cracking Windows hashes_#LM hashes]].
 ## NTLMv1 and NTLMv2
 
 The NTLM protocol comes in two versions:

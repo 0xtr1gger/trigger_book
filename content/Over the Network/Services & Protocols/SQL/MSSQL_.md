@@ -9,7 +9,7 @@ Suppose you've gained a foothold on a Windows machine and stuck as a low-privile
 Snaffler.exe -S
 ```
 
->[!note] See [[Snaffler]].
+>[!note] See [[Snaffler _]].
 
 `Snaffler` finds MSSQL credentials: `sql_dev:Str0ng_P@ssw0rd!`, so you connect to the server using [`mssqlclient.py`](https://github.com/SecureAuthCorp/impacket/blob/master/examples/mssqlclient.py) from `Impacket`:
 
