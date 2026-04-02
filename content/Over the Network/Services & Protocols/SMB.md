@@ -10,339 +10,130 @@ tags:
 
 - SMB operates on a **client-server model**: a client sends requests and the server responds based on session context and access control lists.
 
->[!note] SMB is primarily used in Windows environments, but Linux machines can speak it, too, using [Samba](https://en.wikipedia.org/wiki/Samba_(software)).
+> [!note] SMB is predominantly a Windows protocol, but Linux systems can speak it too via [Samba](https://en.wikipedia.org/wiki/Samba_\(software\)) — a free, open-source implementation of the SMB protocol stack.
 
->[!interesting] SMB can also be used for inter-process communication (IPC) over a network.
+- SMB can also be used for **inter-process communication (IPC)** over a network — this fact becomes very important during exploitation (see [[#RPC Over SMB]]).
+
+## Protocol internals
 ### Shares
 
-SMB introduces a concept of **shares**.
+ > An **SMB share** is a named resource — a filesystem directory, printer, or IPC endpoint — exported by an SMB server and made accessible to authenticated or unauthenticated clients over a network.
 
->An **SMB share** is a named resource — a filesystem directory, printer, or IPC endpoint — exported by an SMB server and made accessible to authenticated or unauthenticated clients over a network.
+- Each share carries its own **ACL (Access Control List)**. This means that two users connecting to the same server may have completely different access profiles.
+- This per-share ACL is layered *on top of* the underlying filesystem permissions (e.g., NTFS) — the more restrictive of the two wins.
 
-- Each share carries its own ACL (Access Control List), meaning two users connecting to the same server may have completely different access profiles.
-- This per-share ACL is layered *on top of the underlying filesystem permissions* (e.g., NTFS); the more restrictive of the two wins.
+### Transport: direct SMB vs. SMB over NetBIOS
 
-### Direct SMB vs. SMB over NetBIOS
-
-SMB can run in one of the following two modes:
+SMB can run in one of two transport modes:
 
 - **Direct SMB**
-	- Modern SMB runs directly over **TCP port `445`** (TCP segments carry SMB messages directly in the payload).
+	- Modern SMB runs directly over **TCP port `445`**. 
+	- SMB messages are placed directly in the TCP payload.
 - **SMB over NetBIOS**
-	- Older implementations use **SMB over NetBIOS** on **TCP port `139`**. In this case, SMB messages are wrapped inside a NetBIOS session (NetBIOS handshake is needed before any SMB communication).
-	- NetBIOS also handles name resolution instead of DNS.
-	- UDP ports `137` and `138` handle NetBIOS name and datagram services, respectively.
-	- This method is deprecated but is still often supported for backward compatibility.
+	- Older implementations wrap SMB inside a *NetBIOS session* on **TCP port `139`**.
+	- A NetBIOS handshake is required before any SMB communication begins.
+	- NetBIOS also handles name resolution instead of DNS, using UDP ports `137` (name service) and `138` (datagram service).
+	- This is deprecated but still supported for backward compatibility on many targets.
+
+When scanning, always hit both `139` and `445`.
 ### SMB session lifecycle
 
 1. **Connection establishment**
-	- An SMB client initiates a TCP connection to the server (TCP port `445`). 
-	- Both sides negotiate the SMB version to use — the *dialect* — and session parameters. The server picks the highest dialect both parties support.
+	- An SMB client initiates a TCP connection to the server on port `445`. 
+	- Both sides negotiate the *SMB dialect* (version) to use. The server picks the highest dialect both parties support.
 
 2. **Authentication**
-	- The client presents authentication credentials, and the server verifies them using Kerberos (in Active Directory environments) or NTLM (in workgroups, or as fallback in AD).
+	- The client presents credentials. The server verifies them via Kerberos (Active Directory) or NTLM (workgroups, or fallback in AD). Null sessions skip this step.
 
 3. **Tree connect**
-	- The client requests access to a specific share (`\\server\sharename`). 
-	- The server issues a Tree ID (TID) and authorizes access using share-level ACLs.
+	- The client requests access to a specific share (`\\server\sharename`). The server issues a Tree ID (TID) and applies share-level ACLs.
 
 4. **Resource operations**
-	- The client requests standard file I/O operations (open, read, write, close).
-	- Each operation is subject to both NTFS permissions and share permissions (the more restrictive of the two wins).
+	- The client requests standard file I/O: open, read, write, close.
+	- Each operation is subject to both NTFS permissions and share permissions (again, the more restrictive of the two wins).
 
 5. **Session termination**
 	- Client sends a logoff; server tears down the session context.
 
 ### SMB versions
 
-| Version                         | Introduced with             | Description                                                                                                                                                                                                                                                               |
-| ------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **SMBv1** (`1.0`)               | Windows NT                  | The original SMB protocol.<br>No encryption support for data in transit.<br>Multiple known CVEs, exploited by [EternalBlue](https://en.wikipedia.org/wiki/EternalBlue/)/[WannaCry](https://en.wikipedia.org/wiki/WannaCry_ransomware_attack).<br>Deprecated by Microsoft. |
-| **SMBv2** (`2.0`/`2.1`)         | Windows Vista / Server 2008 | Addresses many SMBv1 limitations.<br>Redesigned protocol architecture; reduced attack surface compared to SMBv1.<br>Better hashing algorithms (HMAC-SHA256 for message signing).                                                                                          |
-| SMBv3 (SMB `3.0`/`3.1`/`3.1.1`) | Windows 8 / Server 2012     | **End-to-end encryption** support (AES-CCM; AES-256-GCM in Windows 11/Windows Server 2022).<br>Better hashing algorithms (AES-CMAC for integrity checks).<br>Security dialect negotiation (prevents downgrade attacks).                                                   |
+| Version                         | Introduced with             | Description                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SMBv1** (`1.0`)               | Windows NT                  | The original SMB protocol.<br>No encryption for data in transit.<br>Vulnerable to [`MS17-010`](https://www.rapid7.com/db/modules/exploit/windows/smb/ms17_010_eternalblue/) ([`EternalBlue`](https://en.wikipedia.org/wiki/EternalBlue); was used in [`WannaCry`](https://en.wikipedia.org/wiki/WannaCry_ransomware_attack) and [`NotPetya`](https://en.wikipedia.org/wiki/2017_Ukraine_ransomware_attacks)).<br>Deprecated by Microsoft. |
+| **SMBv2** (`2.0`/`2.1`)         | Windows Vista / Server 2008 | Redesigned protocol architecture; reduced attack surface compared to SMBv1.<br>Better hashing algorithms (HMAC-SHA256 for message signing).                                                                                                                                                                                                                                                                                               |
+| SMBv3 (SMB `3.0`/`3.1`/`3.1.1`) | Windows 8 / Server 2012     | **End-to-end encryption** support (AES-CCM; AES-256-GCM in Windows 11/Windows Server 2022).<br>Better hashing algorithms (AES-CMAC for integrity checks).<br>Prevents downgrade attacks via dialect negotiation.                                                                                                                                                                                                                          |
 
-> [!note] Nmap often won't tell you the exact SMB dialect on Windows targets — it returns the OS build number instead. Use `crackmapexec` or `smbmap` to identify the exact SMB dialect in use. On Samba (Linux), version information is usually visible in Nmap output directly.
+> [!note] Nmap often won't tell you the exact SMB dialect on Windows targets — it returns the OS build number instead. Use `crackmapexec`/`netexec` or `enum4linux-ng` to identify the dialect precisely. On Samba (Linux), version info usually appears directly in Nmap output.
 
 ### SMB authentication
 
 SMB supports two access models:
 
 - **User-level authentication**
-	- The client must supply a valid username and password to authenticate and establish a session; upon successful authentication, access is governed by share and file-system ACLs.
+	- The client authenticates with a username and password. Access is then governed by share and filesystem ACLs. Standard in modern environments.
 
 - **Share-level authentication**
-	- Legacy; access to a share is protected by a share-specific password, no per-user identity.
+	- Legacy; access is protected by a per-share password, no per-user identity. Rare in practice.
 
->[!important] Under both authentication levels, the password is sent encrypted. 
+>[!important] Passwords are always sent encrypted under both models.
 
 Under the hood, SMB delegates actual credential verification to one of two protocols:
 
 - [NTLM](https://en.wikipedia.org/wiki/NTLM) (NT LAN Manager)
-	- Challenge-response protocol; vulnerable to replay and downgrade attacks.
+	- Challenge-response protocol; vulnerable to replay attacks, [[Pass-the-Hash]], and downgrade attacks. Used in workgroups and as AD fallback.
 	- See [[NTLM_]].
 - [Kerberos](https://en.wikipedia.org/wiki/Kerberos_\(protocol\)) 
-	- Ticket-based, cryptographically secure; preferred in Active Directory environments.
+	- Ticket-based, cryptographically secure. Preferred in Active Directory environments.
 	- See [[how_Kerberos_works]].
 
->[!important] SMB can be configuration not to require authentication at all. This is often called a **null session**, similar to FTP's anonymous session.
+> [!important] SMB can be configured to require _no_ authentication at all. This is called a **null session** — SMB's equivalent of FTP anonymous login. More on this [[#SMB Null Sessions|below]].
+
+
+>[!interesting]+ Workgroup vs. domain 
+>- **Workgroup** — a **peer-to-peer network** of nodes.
+> 
+> 	- No central authentication server; each machine maintains its **own local SAM database**.
+> 	- User accounts exist per host, not globally.
+> 	- Each machine validates its users locally.
+> 	- Machines discover each other via **NetBIOS broadcast**.
+> 	- NTLM authentication only; Kerberos is not supported.
+> - **Domain** — a centralized, structured environment managed by **Active Directory**.
+> 	- **Authentication is centralized**: all login requests are processed by a **Domain Controller (DC)**.
+> 	- Uses Kerberos authentication by default, and NTLM as a fallback.
+> 	- Users, groups, password policies, and Kerberos tickets are stored and managed by the DC.
+> 	- **Hierarchical organization** that supports organizational units (OUs).
 
 ### Standard administrative shares
 
-Windows automatically creates a set of **hidden administrative shares** (identified by the `$` suffix). These shares are **built-in, can't normally be removed permanently**, and are intended for **remote system management and administration**.
+Windows automatically creates a set of **hidden administrative shares** (identified by the `$` suffix). These are built-in, can't normally be removed permanently, and are intended for remote system management. 
 
->[!note] The `$` suffix means the share is **hidden from normal browsing**, but it is still fully accessible if you know the name (e.g., via `smbclient`, `net view`, etc.).
 
-- **Disk shares: `C$`, `D$`, `$E`, etc.**
-	- Automatically created for **every drive letter** on the system.
-	- Correspond to system drives; provide full filesystem access to that drive (e.g., `$C` -> `C:\`).
+>[!note] The `$` suffix hides shares from casual browsing (`net view`), but they're fully accessible if you know the name.
 
-```bash
-smbclient //target/C$ -U admin
-```
+| Share            | Maps To                             | Notes                                                                                  |
+| ---------------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `C$`, `D$`, etc. | Drive root (`C:\`, `D:\`)           | Full filesystem access. Admin-only by default.                                         |
+| `ADMIN$`         | `%SystemRoot%` (`C:\Windows`)       | Used for remote admin; PsExec uploads binaries here.                                   |
+| `IPC$`           | Named pipes                         | No filesystem access. Used for RPC, auth, SCM, WMI. Often accessible in null sessions. |
+| `PRINT$`         | `C:\Windows\System32\spool\drivers` | Printer drivers.                                                                       |
+| `SYSVOL`         | Domain controller share             | Group Policy objects, scripts. Only on DCs.                                            |
+| `NETLOGON`       | DC share                            | Logon scripts for domain users. Only on DCs.                                           |
 
-- **`ADMIN$`**
-	- Maps to the **Windows system root directory** (`%SystemRoot%`, usually `C:\Windows`); by default, only accessible to administrators.
-	- Primarily used for remote administration, service creation (e.g., PsExec uploads binaries here), and system-level file access.
 
-```bash
-smbclient //target/ADMIN$ -U admin
-```
+| Share                                   | Description                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Disk shares: `C$`, `D$`, `$E`, etc.** | `●` Automatically created for **every drive letter** on the system.<br>`●` Provide full filesystem access on the corresponding drive (e.g., `C$` -> `C:\`).<br>`●` Used by tools like PsExec, SCCM (Microsoft Configuration Manager), backup agents, and domain admins.<br>`●` Accessible to Local Administrator, Domain Admin, and `SYSTEM`.                                                      |
+| **`ADMIN$`**                            | `●` Maps to the **Windows system root directory** (`%SystemRoot%`, usually `C:\Windows`).<br>`●` Primarily used for remote management, service installation, and Windows Update deployment. <br>`●` PsExec uses `ADMIN$` to upload its service binary.<br>`●` By default, only accessible to administrators.                                                                                       |
+| **`IPC$`**                              | `●` Special share used for **inter-process communication (IPC)** via **named pipes**.<br>`●` Not a real folder; exposes **named pipes**.<br>`●` Used internally for **RPC over SMB**, authentication/session setup, and remote service control (SCM, WMI, etc.).<br>`●` Often accessible in null sessions (depending on configuration) and low-privileged contexts (historically mode permissive). |
+| **`PRINT$` and `FAX&`**                 | `●` `PRINT$` is used to store printer drivers, install drivers remotely, and support legacy print spooler operations. See [`CVE-2021-34527`](https://nvd.nist.gov/vuln/detail/cve-2021-34527) (`PrintNightmare` RCE).<br>`●` `FAX$` is for the fax service (rare today ~~unless you're living in Japan~~).                                                                                         |
+| **`SYSVOL`**                            | `●` Exists on every DC (and DC only); stores GPOs (Group Policy Objects) and login scripts.<br>`●` Replicated across all DCs via FRS/DFSR.<br>`●` Its default location is **`C:\Windows\SYSVOL`**.                                                                                                                                                                                                 |
+| **`NETLOGON`**                          | `●` Exists on every DC (and DC only); stores logon scripts, Group Policy files, and system policies.<br>`●` Replicated across all DCs via FRS/DFSR.<br>`●` Not a standalone folder, but the `scripts` subfolder in the `SYSVOL` directory.<br>`●` Its default location is `C:\Windows\SYSVOL\sysvol\<domain>\scripts`.                                                                             |
 
-- **`IPC$`**
-	- Special share used for **inter-process communication (IPC)** via **named pipes**.
-	- Doesn't provide filesystem access.
-	- Used internally for RPC (Remote Procedure Calls), authentication/session setup, and remote service control (SCM, WMI, etc.).
-	- Often accessible in null sessions (depending on configuration) and low-privileged contexts (historically mode permissive).
+`IPC$` deserves special attention — it's the gateway to all RPC-based enumeration. If you can reach `IPC$` (even unauthenticated), you can enumerate users, groups, and shares via named pipes.
 
 ```bash
 smbclient //target/IPC$ -N
 ```
-
-Other common administrative shares:
-
-| Share      | Description                                                     |
-| ---------- | --------------------------------------------------------------- |
-| `PRINT$`   | Printer driver directory (`C:\Windows\System32\spool\drivers`). |
-| `FAX$`     | Fax service data (if enabled).                                  |
-| `SYSVOL`   | Domain controller share (Group Policy, scripts).                |
-| `NETLOGON` | Logon scripts for domain users.                                 |
-
-## SMB commands
-
->[!note]+ SMB clients
->Below are some tools you can use to interact with SMB servers:
->- [`smbclient`](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)
->- [`CrackMapExec`](https://github.com/byt3bl33d3r/CrackMapExec)
->- [`SMBMap`](https://github.com/ShawnDEvans/smbmap)
->- [`Impacket`](https://github.com/fortra/impacket)
-### smbclient
-
->[`smbclient`](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html) is the most commonly used tool to connect to an SMB server from a Linux machine. It provides an FTP-like interface for direct interaction with SMB shares. 
-
->**`Smbclient`** is an **open-source** command-line tool that provides SMB/CIFS protocol client functionality, similar to an FTP client.
-
->[!note]+ Primary `smbclient` use cases
-> - Share enumeration
-> - File transfers
-> - Authentication testing
-> - Remove command executions (given appropriate permissions)
-> - Interactive shells
-> - Automated scripting (supports non-interactive mode)
-
-- Syntax:
-
-```bash
-smbcliebt [options] //server/share
-```
-
-
-- Connect to a share:
-
-```bash
-smbclient //<target>/<share>
-```
-
->[!note] If authentication is required, you'll be prompted for credentials.
-
-- Connect with a username:
-
-```bash
-smbclient //<target>/<share> -U username
-```
-
-- Connect with username and password:
-
-```bash
-smbclient //<target>/<share> -U username%password
-```
-
-- Connect anonymously (null session):
-
-```bash
-smbclient //<target>/<share> -N
-```
-
-- Connect to a share using a specific domain/workgroup:
-
-```bash
-smbclient //<target>/<share> -U username -W <domain>
-```
-
-- List shares:
-
-```bash
-smbclient -L //<target> -U username
-```
-
-- List shares anonymously:
-
-```bash
-smbclient -L //<target> -N
-```
-
-- Run commands (non-interactive):
-
-```bash
-smbclient //<target>/<share> -U username -c "cd folder; ls"
-```
-
-- Download a file (non-interactive):
-
-```bash
-smbclient //<target>/<share> -U username -c "get file.txt"
-```
-
-- Upload a file (non-interactive):
-
-```bash
-smbclient //<target>/<share> -U username -c "put file.txt"
-```
- 
-#### Command reference
-
-- Navigation & directory management:
-
-| Command      | Description                                      |
-| ------------ | ------------------------------------------------ |
-| `ls` / `dir` | List files and directories in current remote directory. |
-| `cd <dir>`   | Change remote directory.                         |
-| `pwd`        | Show current remote directory.                   |
-| `lcd <dir>`  | Change local working directory.                  |
-| `lpwd`       | Show current local directory.                    |
-
-- File transfers:
-
-| Command                | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| `get <remote> [local]` | Download file from server.                       |
-| `put <local> [remote]` | Upload file to server.                           |
-| `mget <mask>`          | Download multiple files (supports wildcards).    |
-| `mput <mask>`          | Upload multiple files.                           |
-
-- File & directory management:
-
-| Command                | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| `mkdir <dir>`          | Create directory on server.                      |
-| `rmdir <dir>` / `rd`   | Remove directory.                                |
-| `rm <mask>`            | Delete file(s).                                  |
-| `rename <old> <new>`   | Rename file.                                     |
-| `scopy <src> <dst>`    | Server-side file copy (if supported).            |
-| `hardlink <src> <dst>` | Create hard link (UNIX extensions).              |
-
-- File information & inspection:
-
-| Command           | Description                                      |
-| ----------------- | ------------------------------------------------ |
-| `allinfo <file>`  | Show all metadata about a file.                  |
-| `stat <file>`     | Show file info (if supported).                   |
-| `altname <file>`  | Show 8.3 (DOS) filename.                        |
-| `readlink <file>` | Show symlink target.                             |
-| `getfacl <file>`  | Get POSIX ACLs (UNIX extensions).               |
-
-- Viewing, printing & output:
-
-| Command        | Description                                      |
-| -------------- | ------------------------------------------------ |
-| `more <file>`  | View remote file via pager.                      |
-| `print <file>` | Send file to remote printer.                     |
-| `queue`        | Show print queue.                                |
-
-- Session behavior & environment:
-
-| Command          | Description                                      |
-| ---------------- | ------------------------------------------------ |
-| `iosize <bytes>` | Set transfer buffer size.                        |
-| `blocksize <n>`  | Set tar block size.                              |
-| `archive <n>`    | Control archive-bit behavior.                    |
-| `backup`         | Toggle backup intent flag.                       |
-| `posix`          | Enable or query UNIX extensions.                 |
-
-- Local shell & command execution:
-
-| Command      | Description                                      |
-| ------------ | ------------------------------------------------ |
-| `! <cmd>`    | Execute local shell command.                     |
-| `history`    | Show command history.                            |
-| `help` / `?` | Show help or list commands.                      |
-
-- Session control:
-
-| Command                 | Description                                      |
-| ----------------------- | ------------------------------------------------ |
-| `exit` / `quit` / `bye` | Close session.                                   |
-
-#### Option reference
-
-- Authentication & credentials:
-
-| Option                                  | Description                                               |
-| --------------------------------------- | --------------------------------------------------------- |
-| `-U`, `--user`                          | Specify the username for authentication (`user%password`). |
-| `-N`, `--no-pass`                       | Don't prompt for a password (SMB null sessions).          |
-| `--password`                            | Provide password explicitly.                              |
-| `--pw-nt-hash`                          | Use an NT hash instead of a password (pass-the-hash).     |
-| `-A`, `--authentication-file`           | Read credentials from a file (username/password/domain).  |
-| `--use-kerberos=desired\|required\|off` | Use Kerberos authentication (Active Directory).           |
-| `-C`, `--use-ccache`                    | Use cached credentials from `winbind`.                    |
-| `-W`, `--workgroup`                     | Specify domain or workgroup.                              |
-
->[!note] User credentials are specified in the form `[domain/]username[%password]`.
-
-- Target selection & connection:
-
-| Option               | Description                                      |
-| -------------------- | ------------------------------------------------ |
-| `-L`, `--list`       | List available shares on a server.               |
-| `-I`, `--ip-address` | Use a specific IP address to connect to.         |
-| `-p`, `--port`       | Specify port number to connect to.               |
-
-- Command execution & session behavior:
-
-| Option                 | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| `-c`, `--command`      | Execute commands, semicolon-separated.           |
-| `-D`, `--directory`    | Change to initial remote directory.              |
-| `-g`, `--grepable`     | Produce grepable output.                         |
-| `-E`, `--stderr`       | Write messages to `stderr` instead of `stdout`.  |
-| `-d`, `--debuglevel`   | Set debug level.                                 |
-| `-l`, `--log-basename` | Base directory for logs.                         |
-
-- Security & protocol:
-
-| Option                 | Description                                      |
-| ---------------------- | ------------------------------------------------ |
-| `-e`, `--encrypt`      | Require encrypted connection.                    |
-| `-m`, `--max-protocol` | Set maximum SMB protocol version.                |
-| `--option=name=value`  | Override `smb.conf` options.                     |
-
-- File transfer & performance:
-
-| Option                   | Description                              |
-| ------------------------ | ---------------------------------------- |
-| `-b`, `--send-buffer`    | Set transfer buffer size.                |
-| `-T`, `--tar`            | Create or extract tar archives over SMB. |
-| `-O`, `--socket-options` | Set TCP socket options.                  |
 
 
 ## SMB enumeration
@@ -354,11 +145,29 @@ smbclient //<target>/<share> -U username -c "put file.txt"
 
 ### Nmap port scanning and version detection
 
-- Check default FTP ports and run version scan:
+- Nmap SMB port scanning and version detection:
 
 ```bash
-sudo nmap -sV -p 137-139,445 <target>
+sudo nmap -sV -p 139,445 <target>
 ```
+
+>[!example]- 
+> ```bash
+> sudo nmap -sV -p 445,139 10.129.202.5
+> ```
+> 
+> ```bash
+> Starting Nmap 7.95 ( https://nmap.org ) at 2026-04-01 10:11 UTC
+> Nmap scan report for 10.129.202.5
+> Host is up (0.13s latency).
+> 
+> PORT    STATE SERVICE     VERSION
+> 139/tcp open  netbios-ssn Samba smbd 4
+> 445/tcp open  netbios-ssn Samba smbd 4
+> 
+> Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+> Nmap done: 1 IP address (1 host up) scanned in 14.08 seconds
+> ```
 
 > [!tip]+
 > - Basic port scanning + version detection — in case you suspect non-standard ports:
@@ -366,15 +175,6 @@ sudo nmap -sV -p 137-139,445 <target>
 > ```bash
 > sudo nmap -sV -p- <target>
 > ```
-
->[!warning] Depending on the SMB implementation and the underlying operating system, Nmap will return different information. 
->- When targeting Windows, SMB version information is usually not included as part of Nmap scan results.
-
-- Run default SMB scripts:
-
-```bash
-sudo nmap -sV -sC -p 137-139,445 <target>
-```
 
 >[!example]- Example: SMB Nmap scan
 > 
@@ -405,33 +205,233 @@ sudo nmap -sV -sC -p 137-139,445 <target>
 > Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 > Nmap done: 1 IP address (1 host up) scanned in 67.56 seconds
 > ```
+>>[!note]+ "Message signing enabled but not required"
+>>SMB signing being enabled but not required means the server _supports_ signing but doesn't _enforce_ it — requests can be sent unsigned; vulnerable to **SMB relay attacks**.
 
->[!note]+ "Message signing enabled but not required"
->SMB signing being enabled but not required means the server _supports_ signing but doesn't _enforce_ it — requests can be sent unsigned; vulnerable to **SMB relay attacks**.
+>[!warning] Depending on the SMB implementation and the underlying operating system, Nmap will return different information. 
+>- When targeting Windows, SMB version information is usually not included as part of Nmap scan results.
 
-- Execute all Nmap scripts relevant to SMB:
+- Run default SMB scripts:
+
+```bash
+sudo nmap -sV -sC -p 137-139,445 <target>
+```
+
+- Run all SMB scripts:
 
 ```bash
 nmap --script smb* <target>
 ```
 
-
 >[!tip]+ Nmap SMB scripts
 > 
-> - List Nmap scripts for SMB:
+> - List available SMB scripts:
 > 
 > ```bash
 > ls -l /usr/share/nmap/scripts/*smb*
 > ```
 > 
 
-- User enumeration:
+#### Targeted NSE scripts
+
+- OS discovery ([`smb-os-discovery`](https://nmap.org/nsedoc/scripts/smb-os-discovery.html)):
 
 ```bash
-nmap --script smb-enum-shares -p 139,445 <target>
+nmap -Pn -p 139,445 --script smb-os-discovery <target>
 ```
 
-### Enumerating shares
+- NetBIOS information ([`nbstat`](https://nmap.org/nsedoc/scripts/nbstat.html)):
+
+```bash
+nmap -Pn -p 139,445 --script nbstat <target>
+```
+
+>[!example]- 
+> ```bash
+> nmap -Pn -p 139,445 --script nbstat 10.129.27.56
+> ```
+> 
+> ```bash
+> Starting Nmap 7.95 ( https://nmap.org ) at 2026-04-01 13:07 UTC
+> Nmap scan report for 10.129.27.56
+> Host is up (0.13s latency).
+> 
+> PORT    STATE SERVICE
+> 139/tcp open  netbios-ssn
+> 445/tcp open  microsoft-ds
+> 
+> Host script results:
+> | nbstat: NetBIOS name: DEVSMB, NetBIOS user: <unknown>, NetBIOS MAC: <unknown> (unknown)
+> | Names:
+> |   DEVSMB<00>           Flags: <unique><active>
+> |   DEVSMB<03>           Flags: <unique><active>
+> |   DEVSMB<20>           Flags: <unique><active>
+> |   \x01\x02__MSBROWSE__\x02<01>  Flags: <group><active>
+> |   DEVOPS<00>           Flags: <group><active>
+> |   DEVOPS<1d>           Flags: <unique><active>
+> |_  DEVOPS<1e>           Flags: <group><active>
+> 
+> Nmap done: 1 IP address (1 host up) scanned in 0.50 seconds
+> ```
+> 
+
+- Share enumeration ([`smb-enum-shares`](https://nmap.org/nsedoc/scripts/smb-enum-shares.html), attempts null session by default):
+
+```bash
+nmap -Pn -p 139,445 --script=smb-enum-shares <target>
+```
+
+- User enumeration ([`smb-enum-users`](https://nmap.org/nsedoc/scripts/smb-enum-users.html))
+
+```bash
+nmap -p 445 --script=smb-enum-users <target>
+```
+
+- Groups ([`smb-enum-groups`](https://nmap.org/nsedoc/scripts/smb-enum-groups.html)) and domain ([`smb-enum-domains`](https://nmap.org/nsedoc/scripts/smb-enum-domains.html)) enumeration:
+
+```bash
+nmap -p 445 --script=smb-enum-groups,smb-enum-domains <target>
+```
+
+- Security settings, such as signing and authentication level ([`smb-security-mode`](https://nmap.org/nsedoc/scripts/smb-security-mode.html)):
+
+```bash
+nmap -p 445 --script=smb-security-mode <target>
+```
+
+- Check for EternalBlue ([`smb-vuln-ms17-010`](https://nmap.org/nsedoc/scripts/smb-vuln-ms17-010.html)):
+
+```bash
+nmap -p 445 --script smb-vuln-ms17-010 <target>
+```
+
+- Check for common SMB vulnerabilities:
+
+```bash
+nmap -p 445 --script smb-vuln* <target>
+```
+### NetBIOS name resolution
+#### nbtscan
+
+>`ntbscan` — used to scan IP networks for NetBIOS name information.
+
+>[!note] See [[SMB tools_#nbtscan]].
+
+- Scan a single host:
+
+```bash
+nbtscan <target>
+```
+
+- Scan a whole subnet:
+
+```bash
+nbtscan <network_address>/<prefix>
+```
+
+>[!example]+
+> ```bash
+> nbtscan 10.129.27.56
+> ```
+> 
+> ```bash
+> Doing NBT name scan for addresses from 10.129.27.56
+> 
+> IP address       NetBIOS Name     Server    User             MAC address      
+> ------------------------------------------------------------------------------
+> 10.129.27.56     DEVSMB           <server>  DEVSMB           00:00:00:00:00:00
+> ```
+#### nmblookup
+
+ >[`nmblookup`](https://www.samba.org/samba/docs/current/man-html/nmblookup.1.html) is used to query NetBIOS names and map them to IP addresses.
+
+>[!note] See [[SMB tools_#nmblookup]].
+
+- Query a NetBIOS name:
+
+```bash
+nmblookup <NetBIOS_name>
+```
+
+- Query an IP address:
+
+```bash
+nmblookup -A <IP_address>
+```
+
+>[!interesting]+ `nmblookup` status query
+>`nmblookup` performs a NetBIOS node status query against UDP port `137`. The target responds with its NetBIOS name table, which lists:
+>- Registered NetBIOS names
+>- Their type (workstation, server, domain, etc.)
+>- Whether they're unique or group names
+>- Whether they're active
+>- Sometimes the MAC address (not always reliable).
+
+>[!example]+
+> ```bash
+> nmblookup -A 10.129.27.56
+> ```
+> 
+> ```bash
+> Looking up status of 10.129.27.56
+> 	DEVSMB          <00> -         H <ACTIVE> 
+> 	DEVSMB          <03> -         H <ACTIVE> 
+> 	DEVSMB          <20> -         H <ACTIVE> 
+> 	..__MSBROWSE__. <01> - <GROUP> H <ACTIVE> 
+> 	DEVOPS          <00> - <GROUP> H <ACTIVE> 
+> 	DEVOPS          <1d> -         H <ACTIVE> 
+> 	DEVOPS          <1e> - <GROUP> H <ACTIVE> 
+> 
+> 	MAC Address = 00-00-00-00-00-00
+> ```
+> Columns, in order:
+> 1. NetBIOS name itself.
+> 2. NetBIOS [suffix](http://ubiqx.org/cifs/Appendix-C.html) (16th byte of the name, in hex; shows the *type* of this name).
+> 3. Unique/group indicator (`<GROUP>` -> group name, blank -> unique name).
+> 4. NetBIOS node type:
+> 	- `B` — Broadcast (uses broadcast only).
+> 	- `P` — Peer-to-peer (Uses WINS only).
+> 	- `M` — Mixed (Broadcast first, then WINS).
+> 	- `H` — Hybrid (WINS first, then broadcast).
+> 5. Status: Whether the name is currently registered and active (`<ACTIVE>` for active).
+
+>[!note]- Common NetBIOS suffixes
+> 
+> For a complete reference, see [`Appendix C: Known NetBIOS Suffix Values — Implementing CIFS, ubiqx.com`](http://ubiqx.org/cifs/index.html#Contents)
+> 
+> - For unique names:
+> 
+> | Suffix | Name                        |
+> | ------ | --------------------------- |
+> | `<00>` | Workstation Service         |
+> | `<03>` | Messenger Service           |
+> | `<06>` | Remote Access Service (RAS) |
+> | `<20>` | File Server                 |
+> | `<21>` | RAS client                  |
+> | `<1B>` | Domain Master Browser       |
+> | `<1D>` | Master Browser              |
+> 
+> - For group names:
+> 
+> | Suffix | Name                                         |
+> | ------ | -------------------------------------------- |
+> | `<00>` | Workstation Service (workgroup/domain name)  |
+> | `<1C>` | Domain Controllers for a domain              |
+> | `<1E>` | Browser Service Elections                    |
+> 
+
+- Broadcast workgroup discovery:
+
+```bash
+nmblookup '*'
+```
+### Shares
+
+#### smbclient
+
+>[`smbclient`](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html) is a tool from the Samba suite, allows Linux/Unix systems to interact with SMB/CIFS servers using an interface similar to FTP.
+
+>[!note] See [[SMB tools_#smbclient]].
 
 - List shares anonymously:
 
@@ -439,31 +439,425 @@ nmap --script smb-enum-shares -p 139,445 <target>
 smbclient -L //<target> -U anonymous
 ```
 
-```bash
-smbmap -H <target>
-```
-
-- Nmap [`smb-enum-shares`](https://nmap.org/nsedoc/scripts/smb-enum-shares.html) script:
-
-```bash
-nmap -p 445 --script=smb-enum-shares <target>
-```
-
-- List shares with credentials:
+- With credentials:
 
 ```bash
 smbclient -L //<target> -U username%password
 ```
 
+- Specify a domain:
+
+```bash
+smbclient -L //<target> -U domain/username%password
+```
+
+>[!example]-
+> ```bash
+> smbclient -L //10.129.27.56 -U anonymous
+> ```
+> 
+> ```bash
+> Password for [WORKGROUP\anonymous]:
+> 
+> 	Sharename       Type      Comment
+> 	---------       ----      -------
+> 	print$          Disk      Printer Drivers
+> 	sambashare      Disk      InFreight SMB v3.1
+> 	IPC$            IPC       IPC Service (InlaneFreight SMB server (Samba, Ubuntu))
+> Reconnecting with SMB1 for workgroup listing.
+> smbXcli_negprot_smb1_done: No compatible protocol selected by server.
+> Protocol negotiation to server 10.129.27.56 (for a protocol between LANMAN1 and NT1) failed: NT_STATUS_INVALID_NETWORK_RESPONSE
+> Unable to connect with SMB1 -- no workgroup available
+> ```
+
+#### smbmap
+
+>[`SMBMap`](https://github.com/ShawnDEvans/smbmap) — SMB enumeration tool, used to identify accessible shares, permissions, and content across a network domain.
+
+>[!note] See [[SMB tools_#smbmap]].
+
+- List shares anonymously:
+
+```bash
+smbmap -H <target>
+```
+
+> [!example]-
+> ```bash
+> smbmap -H 10.129.27.56
+> ```
+> 
+> ```bash
+> 
+>     ________  ___      ___  _______   ___      ___       __         _______
+>    /"       )|"  \    /"  ||   _  "\ |"  \    /"  |     /""\       |   __ "\
+>   (:   \___/  \   \  //   |(. |_)  :) \   \  //   |    /    \      (. |__) :)
+>    \___  \    /\  \/.    ||:     \/   /\   \/.    |   /' /\  \     |:  ____/
+>     __/  \   |: \.        |(|  _  \  |: \.        |  //  __'  \    (|  /
+>    /" \   :) |.  \    /:  ||: |_)  :)|.  \    /:  | /   /  \   \  /|__/ \
+>   (_______/  |___|\__/|___|(_______/ |___|\__/|___|(___/    \___)(_______)
+> -----------------------------------------------------------------------------
+> SMBMap - Samba Share Enumerator v1.10.7 | Shawn Evans - ShawnDEvans@gmail.com
+>                      https://github.com/ShawnDEvans/smbmap
+> 
+> [*] Detected 1 hosts serving SMB                                                                                                  
+> [*] Established 1 SMB connections(s) and 0 authenticated session(s)                                                          
+>                                                                                                                              
+> [+] IP: 10.129.27.56:445	Name: 10.129.27.56        	Status: NULL Session
+> 	Disk                                                  	Permissions	Comment
+> 	----                                                  	-----------	-------
+> 	print$                                            	NO ACCESS	Printer Drivers
+> 	sambashare                                        	READ ONLY	InFreight SMB v3.1
+> 	IPC$                                              	NO ACCESS	IPC Service (InlaneFreight SMB server (Samba, Ubuntu))
+> [*] Closed 1 connections
+> ```
+
+>[!note] `Permissions` column
+> - `READ ONLY`: You can browse the share and download files.
+> - `READ, WRITE`: You can browse the share, download and upload files.
+> - `NO ACCESS`: Means exactly that.
+
+- With credentials: 
+
 ```bash
 smbmap -H <target> -u username -p password
 ```
 
+- Specify a domain:
+
 ```bash
-crackmapexec smb 192.168.1.11 -u USERNAME -p PASSWORD --shares
+smbmap -H <target> -u username -p password -d domain
+```
+
+
+- Use NT has instead of a password ([[Pass-the-Hash]]):
+
+```bash
+smbmap -H <target> -u username -p 'LMHASH:NTHASH'
+```
+
+- Recursive listing:
+
+```bash
+smbmap -H <target> -u username -p password -r
+```
+
+>[!example]- 
+> ```bash
+> mbmap -H 10.129.27.56 -r
+> ```
+> 
+> ```bash
+> 
+>     ________  ___      ___  _______   ___      ___       __         _______
+>    /"       )|"  \    /"  ||   _  "\ |"  \    /"  |     /""\       |   __ "\
+>   (:   \___/  \   \  //   |(. |_)  :) \   \  //   |    /    \      (. |__) :)
+>    \___  \    /\  \/.    ||:     \/   /\   \/.    |   /' /\  \     |:  ____/
+>     __/  \   |: \.        |(|  _  \  |: \.        |  //  __'  \    (|  /
+>    /" \   :) |.  \    /:  ||: |_)  :)|.  \    /:  | /   /  \   \  /|__/ \
+>   (_______/  |___|\__/|___|(_______/ |___|\__/|___|(___/    \___)(_______)
+> -----------------------------------------------------------------------------
+> SMBMap - Samba Share Enumerator v1.10.7 | Shawn Evans - ShawnDEvans@gmail.com
+>                      https://github.com/ShawnDEvans/smbmap
+> 
+> [*] Detected 1 hosts serving SMB                                                                                                  
+> [*] Established 1 SMB connections(s) and 0 authenticated session(s)                                                          
+>                                                                                                                              
+> [+] IP: 10.129.27.56:445	Name: 10.129.27.56        	Status: NULL Session
+> 	Disk                                                  	Permissions	Comment
+> 	----                                                  	-----------	-------
+> 	print$                                            	NO ACCESS	Printer Drivers
+> 	sambashare                                        	READ ONLY	InFreight SMB v3.1
+> 	./sambashare
+> 	dr--r--r--                0 Mon Nov  8 13:43:14 2021	.
+> 	dr--r--r--                0 Mon Nov  8 15:53:19 2021	..
+> 	fr--r--r--              807 Tue Feb 25 12:03:21 2020	.profile
+> 	dr--r--r--                0 Mon Nov  8 13:43:45 2021	contents
+> 	fr--r--r--              220 Tue Feb 25 12:03:21 2020	.bash_logout
+> 	fr--r--r--             3771 Tue Feb 25 12:03:21 2020	.bashrc
+> 	IPC$                                              	NO ACCESS	IPC Service (InlaneFreight SMB server (Samba, Ubuntu))
+> [*] Closed 1 connections 
+> ```
+
+>[!tip]+
+> - Download a specific file:
+> 
+> ```bash
+> smbmap -H <target> -u username -p password --download 'sharename\path\to\file'
+> ```
+> 
+> - Upload a file:
+> 
+> ```bash
+> smbmap -H <target> -u username -p password --upload /local/file 'sharename\destination'
+> ```
+> 
+> - Execute a command (requires write access or admin):
+> 
+> ```bash
+> smbmap -H <target> -u username -p password -x 'whoami'
+> ```
+### enum4linux-ng
+
+> [`enum4linux-ng`](https://github.com/cddmp/enum4linux-ng) is a Python rewrite of the original [`enum4linux`](https://www.kali.org/tools/enum4linux/) (wrapper around Samba utilities like `smbclient`, `rpcclient`, `net`, `nmblookup`), designed for comprehensive SMB/RPC enumeration.
+
+>[!note]+ `enum4linux` performs:
+>- NetBIOS name lookups (`nmblookup`).
+>- Share enumeration (`smbclient -L`).
+>- User and group enumeration (`rpcclient enumdomusers`, `enumdomgroups`).
+>- RID cycling (via `rpcclient lookupsids`).
+>- Password policy enumeration (SAMR/LSARPC).
+>- OS and domain info discovery.
+>- Workgroup/domain listing.
+>- Printer enumeration.
+>- Samba version detection.
+
+>[!note] See [[SMB tools_#enum4linux-ng]]
+
+- Do all basic enumeration including `nmblookup` (`-U -G -S -P -O -N -I -L`):
+
+```bash
+enum4linux-ng -A <target>
+```
+
+```bash
+enum4linux-ng <target>
 ```
 
 >[!example]-
+> ```bash
+> enum4linux-ng -A 10.129.202.5  
+> ```
+> 
+> ```bash
+> ENUM4LINUX - next generation (v1.3.4)
+> 
+>  ==========================
+> |    Target Information    |
+>  ==========================
+> [*] Target ........... 10.129.202.5
+> [*] Username ......... ''
+> [*] Random Username .. 'sddkdmpq'
+> [*] Password ......... ''
+> [*] Timeout .......... 5 second(s)
+> 
+>  =====================================
+> |    Listener Scan on 10.129.202.5    |
+>  =====================================
+> [*] Checking LDAP
+> [-] Could not connect to LDAP on 389/tcp: connection refused
+> [*] Checking LDAPS
+> [-] Could not connect to LDAPS on 636/tcp: connection refused
+> [*] Checking SMB
+> [+] SMB is accessible on 445/tcp
+> [*] Checking SMB over NetBIOS
+> [+] SMB over NetBIOS is accessible on 139/tcp
+> 
+>  ===========================================================
+> |    NetBIOS Names and Workgroup/Domain for 10.129.202.5    |
+>  ===========================================================
+> [+] Got domain/workgroup name: DEVOPS
+> [+] Full NetBIOS names information:
+> - DEVSMB          <00> -         H <ACTIVE>  Workstation Service
+> - DEVSMB          <03> -         H <ACTIVE>  Messenger Service
+> - DEVSMB          <20> -         H <ACTIVE>  File Server Service
+> - ..__MSBROWSE__. <01> - <GROUP> H <ACTIVE>  Master Browser
+> - DEVOPS          <00> - <GROUP> H <ACTIVE>  Domain/Workgroup Name
+> - DEVOPS          <1d> -         H <ACTIVE>  Master Browser
+> - DEVOPS          <1e> - <GROUP> H <ACTIVE>  Browser Service Elections
+> - MAC Address = 00-00-00-00-00-00
+> 
+>  =========================================
+> |    SMB Dialect Check on 10.129.202.5    |
+>  =========================================
+> [*] Trying on 445/tcp
+> [+] Supported dialects and settings:
+> Supported dialects:
+>   SMB 1.0: false
+>   SMB 2.02: true
+>   SMB 2.1: true
+>   SMB 3.0: true
+>   SMB 3.1.1: true
+> Preferred dialect: SMB 3.0
+> SMB1 only: false
+> SMB signing required: false
+> 
+>  ===========================================================
+> |    Domain Information via SMB session for 10.129.202.5    |
+>  ===========================================================
+> [*] Enumerating via unauthenticated SMB session on 445/tcp
+> [+] Found domain information via SMB
+> NetBIOS computer name: DEVSMB
+> NetBIOS domain name: ''
+> DNS domain: ''
+> FQDN: nix01
+> Derived membership: workgroup member
+> Derived domain: unknown
+> 
+>  =========================================
+> |    RPC Session Check on 10.129.202.5    |
+>  =========================================
+> [*] Check for null session
+> [+] Server allows session using username '', password ''
+> [*] Check for random user
+> [+] Server allows session using username 'sddkdmpq', password ''
+> [H] Rerunning enumeration with user 'sddkdmpq' might give more results
+> 
+>  ===================================================
+> |    Domain Information via RPC for 10.129.202.5    |
+>  ===================================================
+> [+] Domain: DEVOPS
+> [+] Domain SID: NULL SID
+> [+] Membership: workgroup member
+> 
+>  ===============================================
+> |    OS Information via RPC for 10.129.202.5    |
+>  ===============================================
+> [*] Enumerating via unauthenticated SMB session on 445/tcp
+> [+] Found OS information via SMB
+> [*] Enumerating via 'srvinfo'
+> [+] Found OS information via 'srvinfo'
+> [+] After merging OS information we have the following result:
+> OS: Linux/Unix
+> OS version: '6.1'
+> OS release: ''
+> OS build: '0'
+> Native OS: not supported
+> Native LAN manager: not supported
+> Platform id: '500'
+> Server type: '0x809a03'
+> Server type string: Wk Sv PrQ Unx NT SNT InlaneFreight SMB server (Samba, Ubuntu)
+> 
+>  =====================================
+> |    Users via RPC on 10.129.202.5    |
+>  =====================================
+> [*] Enumerating users via 'querydispinfo'
+> [+] Found 0 user(s) via 'querydispinfo'
+> [*] Enumerating users via 'enumdomusers'
+> [+] Found 0 user(s) via 'enumdomusers'
+> 
+>  ======================================
+> |    Groups via RPC on 10.129.202.5    |
+>  ======================================
+> [*] Enumerating local groups
+> [+] Found 0 group(s) via 'enumalsgroups domain'
+> [*] Enumerating builtin groups
+> [+] Found 0 group(s) via 'enumalsgroups builtin'
+> [*] Enumerating domain groups
+> [+] Found 0 group(s) via 'enumdomgroups'
+> 
+>  ======================================
+> |    Shares via RPC on 10.129.202.5    |
+>  ======================================
+> [*] Enumerating shares
+> [+] Found 3 share(s):
+> IPC$:
+>   comment: IPC Service (InlaneFreight SMB server (Samba, Ubuntu))
+>   type: IPC
+> print$:
+>   comment: Printer Drivers
+>   type: Disk
+> sambashare:
+>   comment: InFreight SMB v3.1
+>   type: Disk
+> [*] Testing share IPC$
+> [-] Could not check share: STATUS_OBJECT_NAME_NOT_FOUND
+> [*] Testing share print$
+> [+] Mapping: DENIED, Listing: N/A
+> [*] Testing share sambashare
+> [+] Mapping: OK, Listing: OK
+> 
+>  =========================================
+> |    Policies via RPC for 10.129.202.5    |
+>  =========================================
+> [*] Trying port 445/tcp
+> [+] Found policy:
+> Domain password information:
+>   Password history length: None
+>   Minimum password length: 5
+>   Maximum password age: 49710 days 6 hours 21 minutes
+>   Password properties:
+>   - DOMAIN_PASSWORD_COMPLEX: false
+>   - DOMAIN_PASSWORD_NO_ANON_CHANGE: false
+>   - DOMAIN_PASSWORD_NO_CLEAR_CHANGE: false
+>   - DOMAIN_PASSWORD_LOCKOUT_ADMINS: false
+>   - DOMAIN_PASSWORD_PASSWORD_STORE_CLEARTEXT: false
+>   - DOMAIN_PASSWORD_REFUSE_PASSWORD_CHANGE: false
+> Domain lockout information:
+>   Lockout observation window: 30 minutes
+>   Lockout duration: 30 minutes
+>   Lockout threshold: None
+> Domain logoff information:
+>   Force logoff time: 49710 days 6 hours 21 minutes
+> 
+>  =========================================
+> |    Printers via RPC for 10.129.202.5    |
+>  =========================================
+> [+] No printers returned (this is not an error)
+> 
+> Completed after 43.65 seconds
+> ```
+
+- Do all simple short enumeration without NetBIOS names lookup (`-U -G -S -P -O -I -L`)L
+
+```bash
+enum4linux-ng -As <target>
+```
+
+- Retrieve information via RPC:
+
+```bash
+enum4linux-ng -U <target>  # users
+enum4linux-ng -G <target>  # groups
+enum4linux-ng -Gm <target> # groups + members
+enum4linux-ng -S <target>  # shares
+enum4linux-ng -C <target>  # services
+enum4linux-ng -P <target>  # password policy information
+enum4linux-ng -O <target>  # OS information
+enum4linux-ng -L <target>  # additional domain info via LDAP(S)
+                           # for DCs only
+enum4linux-ng -I <target>  # printer information
+```
+
+- Enumerate users via RID cycling:
+
+```bash
+enum4linux-ng -R  <target>
+```
+
+- NetBIOS name lookup (like `nbstat`):
+
+```bash
+enum4linux-ng -N <target>
+```
+
+> [!note]+ `enum4linux-ng`
+> `enum4linux-ng` is the modern rewrite of `enum4linux` with better output formatting (JSON/YAML support) and improved reliability. Use it if the original hangs or fails. 
+> - Syntax is similar:
+> ```
+> enum4linux-ng -A <target>
+> ```
+
+### Imoacket
+### CrackMapExec
+
+> [CrackMapExec (CME)](https://github.com/byt3bl33d3r/CrackMapExec) — a post-exploitation/network assessment tool; can be used for SMB enumeration.
+
+>[!note] See [[SMB tools_#CrackMapExec]].
+
+- Enumerate shares (null session):
+
+```bash
+crackmapexec smb <target> -u '' -p '' --shares
+```
+
+- Enumerate shares (authenticated):
+
+```bash
+crackmapexec smb <target> -u username -p password --shares
+```
+
+>[!example]+ Example: Obtaining information about SMB shares
 > ```bash
 > crackmapexec smb 10.129.203.6 -u '' -p '' --shares
 > ```
@@ -478,350 +872,6 @@ crackmapexec smb 192.168.1.11 -u USERNAME -p PASSWORD --shares
 > SMB         10.129.234.211  445    DEVSMB           sambashare      READ            InFreight SMB v3.1
 > SMB         10.129.234.211  445    DEVSMB           IPC$                            IPC Service (InlaneFreight SMB server (Samba, Ubuntu))
 > ```
-
-- Recursive enumeration:
-
-```bash
-smbmap -H <target> -u "username" -p "password" -r
-```
-
-### Enumerating users, groups, and domains
-
-- Username enumeration:
-
-```bash
-enum4linux -U <target>
-```
-
-- Nmap [`smb-enum-users`](https://nmap.org/nsedoc/scripts/smb-enum-users.html) script:
-
-```bash
-nmap -p 445 --script=smb-enum-users <target>
-```
-
-- Group enumeration:
-
-```bash
-enum4linux -G <target>
-```
-
-- Nmap [`smb-enum-groups`](https://nmap.org/nsedoc/scripts/smb-enum-groups.html)  and [`smb-enum-domains`](https://nmap.org/nsedoc/scripts/smb-enum-domains.html) scripts:
-
-```bash
-nmap -p 445 --script=smb-enum-groups,smb-enum-domains <target>
-```
-
-- Password policy:
-
-```bash
-enum4linux -P <target>
-```
-
-- Security settings (Nmap [`smb-security-mode`](https://nmap.org/nsedoc/scripts/smb-security-mode.html) script):
-
-```bash
-nmap -p 445 --script=smb-security-mode <target>
-```
-
->[!example]- Example: SMB Nmap scan
-> 
-> ```bash
-> sudo nmap -sC -sV 10.129.203.6
-> ```
-> 
-> ```bash
-> Starting Nmap 7.94SVN ( https://nmap.org ) at 2025-09-16 08:42 CDT
-> Nmap scan report for 10.129.203.6
-> Host is up (0.076s latency).
-> Not shown: 995 closed tcp ports (reset)
-> PORT     STATE SERVICE     VERSION
-> # ...
-> 139/tcp  open  netbios-ssn Samba smbd 4.6.2
-> 445/tcp  open  netbios-ssn Samba smbd 4.6.2
-> # ...
-> 
-> Host script results:
-> |_nbstat: NetBIOS name: ATTCSVC-LINUX, NetBIOS user: <unknown>, NetBIOS MAC: <unknown> (unknown)
-> | smb2-time: 
-> |   date: 2025-09-16T13:43:11
-> |_  start_date: N/A
-> | smb2-security-mode: 
-> |   3:1:1: 
-> |_    Message signing enabled but not required
-> 
-> Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-> Nmap done: 1 IP address (1 host up) scanned in 67.56 seconds
-> ```
-
-### smbmap
-
->[`smbmap`](https://github.com/ShawnDEvans/smbmap) is a tool designed for detailed SMB enumeration across large networks. 
-
-- Basic share enumeration (null session):
-
-```bash
-smbmap -H <target>
-```
-
-- Authenticated enumeration:
-
-```bash
-smbmap -H <target> -u username -p password
-```
-
-- Specify a domain:
-
-```bash
-smbmap -H <target> -u username -p password -d DOMAIN
-```
-
-> [!example]+ Example: SMB share enumeration
-> ```bash
-> smbmap -H 10.129.203.6
-> ```
-> 
-> ```bash
-> [+] IP: 10.129.203.6:445	Name: 10.129.203.6                                      
->      Disk                Permissions  Comment
-> 	----                 -----------  -------
-> 	print$               NO ACCESS    Printer Drivers
-> 	GGJ                  READ ONLY    Priv
-> 	IPC$                 NO ACCESS    IPC Service (attcsvc-linux Samba)
-> ```
-
->[!note] `Permissions` column
-> - `READ ONLY`: You can browse the share and download files.
-> - `READ, WRITE`: You can browse the share, download and upload files.
-> - `NO ACCESS`: Means exactly that.
-
-
-- Use NT has instead of a password ([[Pass-the-Hash]]):
-
-```bash
-smbmap -H <target> -u username -p 'LMHASH:NTHASH'
-```
-
-- List all files in a share recursively:
-
-```bash
-smbmap -H <target> -s <share> -r
-```
-
->[!example]+ Example: Recursive file listing in an SMB share 
-> 
-> ```bash
-> smbmap -H 10.129.203.6 -s GGJ -r
-> ```
-> 
-> ```bash
-> [+] IP: 10.129.203.6:445	Name: 10.129.203.6                                      
->         Disk                                                  	Permissions	Comment
-> 	----                                                  	-----------	-------
-> 	print$                                            	NO ACCESS	Printer Drivers
-> 	GGJ                                               	READ ONLY	Priv
-> 	.\GGJ\*
-> 	dr--r--r--                0 Tue Apr 19 16:33:55 2022	.
-> 	dr--r--r--                0 Mon Apr 18 12:08:30 2022	..
-> 	fr--r--r--             3381 Tue Apr 19 16:33:03 2022	id_rsa
-> 	IPC$                                              	NO ACCESS	IPC Service (attcsvc-linux Samba)
-> ```
-
-- List files recursively in all shares, with credentials:
-
-```bash
-smbmap -H <target> -u username -p password -r
-```
-
-- Download a file:
-
-```bash
-smbmap -H <target> -s <share> --download '<share>\filename'
-```
-
->[!example]+ Example: Download file from an SMB share
-> 
-> ```bash
-> smbmap -H 10.129.203.6 -s GGJ -u 'jason' -p '34c8zuNBo91!@28Bszh' --download 'GGJ\id_rsa'
-> ```
-> 
-> ```bash
-> [+] Starting download: GGJ\id_rsa (3381 bytes)
-> [+] File output to: /home/htb-ac-1908986/10.129.203.6-GGJ_id_rsa
-> ```
-
-- Upload a file:
-
-```bash
-smbmap -H <target> -s <share> --upload /local/path/file.txt '<share>\file.txt'
-```
-
-- Delete a remote file:
-
-```bash
-smbmap -H <target> --delete '<share>\file.txt'
-```
-
-- Execute a command (requires admin-level access):
-
-```bash
-smbmap -H <target> -u username -p password -x 'whoami'
-```
-
-- List all drives (requires admin access):
-
-```bash
-smbmap -H <target> -u username -p password -L
-```
-#### Option reference
-
-- Connection:
-
-| Option        | Description                                           |
-| ------------- | ----------------------------------------------------- |
-| `-H`          | Target IP address or FQDN.                            |
-| `--host-file` | File containing a list of hosts to connect to.        |
-| `-s`          | Specify a share (default: `C$`).                      |
-| `-d`          | Specify a domain name (default: `WORKGROUP`).         |
-| `-P`          | SMB port number (default: `445`).                     |
-| `--timeout`   | Set port scan socket timeout (default: `.5` seconds). |
-
-- Authentication:
-
-| Option             | Description                                               |
-| ------------------ | --------------------------------------------------------- |
-| `-u`, `--username` | Username; if omitted, null session assumed.               |
-| `-p`, `--password` | Password or NT hash; format: `<LM_hash>:<NT_hash>`.       |
-| `--prompt`         | Prompt for a password.                                    |
-| `-k`, `--kerberos` | Use Kerberos authentication.                              |
-| `--no-pass`        | Use CCache file (`export KRB5CCNAME='~/current.ccache'`). |
-| `--dc-ip`          | IP address or FQDN of the DC.                             |
-
-
-- Information gathering:
-
-| Option               | Description                                                                                                                                          |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-v`, `--version`    | Return the OS version of the remote host.                                                                                                            |
-| `--signing`          | Check if host has SMB signing disabled, enabled, or required.                                                                                        |
-| `--admin`            | Report if the user is an admin.                                                                                                                      |
-| `-L`                 | List all drives on the specified host (requires admin rights).                                                                                       |
-| `-r`                 | Recursively list directories and files (no share\path lists the root of ALL shares); e.g., `email/backup`.                                           |
-| `--depth`            | Traverse a directory tree to a specific depth (default: `1` (root node)).                                                                            |
-| `--exclude <shares>` | Exclude shares from searching and listing, e.g., `--exclude ADMIN$ C$`.                                                                              |
-| `-A <pattern>`       | Define a file name pattern (regex) that auto-downloads a file on a match (requires `-r`), case in-sensitive; e.g., `'(web\|global).(asax\|config)'`. |
-
-- Command execution:
-
-| Option   | Description                                                   |
-| -------- | ------------------------------------------------------------- |
-| `-x`     | Execute a command.                                            |
-| `--mode` | Set the execution method, `wmi` or `psexec` (default: `wmi`). |
-
-- File Operations:
-
-| Option                 | Description                   |
-| ---------------------- | ----------------------------- |
-| `--download <path>`    | Download a file from a share. |
-| `--upload <src> <dst>` | Upload a file to the a share. |
-| `--delete <path>`      | Delete a remote file.         |
-
-
-- Output:
-
-| Option         | Description                                                                                                              |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `--no-banner`  | Do not print banner on top of the output.                                                                                |
-| `--no-color`   | Remove color from the output.                                                                                            |
-| `--no-update`  | Remove `Working on it` message.                                                                                          |
-| `-g <file>`    | Output to a file and a grepable format.                                                                                  |
-| `--csv <file>` | Output in a CSV format.                                                                                                  |
-| `-q`           | Quiet mode; only show shares you have `read` or `write` on, and suppresses file listing when performing a search (`-A`). |
-
-### enum4linux
-
-> [`enum4linux`](https://www.kali.org/tools/enum4linux/) is a wrapper around Samba utilities (`smbclient`, `rpcclient`, `net`, `nmblookup`) designed for comprehensive SMB/RPC enumeration.
-
->[!note]+ `enum4linux` can retrieve:
-> - Domain and workgroup information.
-> - User accounts and RIDs (Relative IDs).
-> - Group memberships and descriptions.
-> - Share names and permissions.
-> - Password policies and account restrictions.
-> - OS version and system information.
-> - NetBIOS name tables (if used).
-
-- The `-a` flag performs all basic enumeration in one shot:
-
-```bash
-enum4linux -a <tartget>
-```
-
-- Authenticated enumeration:
-
-```bash
-enum4linux -a -u <username> -p <password> <target>
-```
-
-- Targeted enumeration:
-
-```bash
-enum4linux -U <target>   # Users
-enum4linux -S <target>   # Shares
-enum4linux -G <target>   # Groups
-enum4linux -P <target>   # Password policy
-enum4linux -o <target>   # OS information
-enum4linux -n <target>   # NetBIOS name table (nmblookup)
-enum4linux -r <target>   # RID cycling — enumerate users by brute-forcing RIDs
-```
-#### Option reference
-
-- Enumerate:
-
-| Option           | Description                                                                                                                      |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `-a`             | Perform all basic enumeration (`-U -S -G -P -r -o -n -i`).<br>Default if no options are provided.                                |
-| `-U`             | List users.                                                                                                                      |
-| `-M`             | List machines.                                                                                                                   |
-| `-S`             | List shares.                                                                                                                     |
-| `-G`             | List groups and members.                                                                                                         |
-| `-P`             | Get password policy.                                                                                                             |
-| `-o`             | Get OS information.                                                                                                              |
-| `-i`             | Get printer information.                                                                                                         |
-| `-n`             | Run `nmblookup` (NetBIOS name table; similar to `nbtstat`).                                                                      |
-| `-s`             | Brute-force share names from a wordlist.                                                                                         |
-| `-d`             | Detailed mode (applies to `-U` and `-S`).                                                                                        |
-| `-u <username>`  | Username (default: blank).                                                                                                       |
-| `-p <password>`  | Password (default: blank).                                                                                                       |
-| `-w <workgroup>` | Specify workgroup manually (usually found automatically).                                                                        |
-| `-v`             | Verbose output (show full commands being run).                                                                                   |
-| `-A`             | Aggressive mode (perform write checks on shares, etc.).                                                                          |
-| `-r`             | Enumerate users via RID cycling.                                                                                                 |
-| `-R`             | RID ranges to enumerate.                                                                                                         |
-| `-k`             | Users that exist on the target system.<br>(default: `administrator`, `guest`, `krbtgt`, `domain admins`, `root`, `bin`, `none`). |
-> [!note]+ `enum4linux-ng`
-> `enum4linux-ng` is the modern rewrite of `enum4linux` with better output formatting (JSON/YAML support) and improved reliability. Use it if the original hangs or fails. 
-> - Syntax is similar
-> ```
-> enum4linux-ng -A <target>
-> ```
-
-### CrackMapExec
-
-> [CrackMapExec (CME)](https://github.com/byt3bl33d3r/CrackMapExec) is a post-exploitation and network assessment tool built for Windows/Active Directory environments. CME automates credential testing, share enumeration, and command execution across multiple hosts simultaneously.
-
-CME is one of the most practical tools in your SMB toolkit. It's fast, noisy , and gives you clear pass/fail output for credential testing across entire subnets.
-
-- Enumerate shares (null session):
-
-```bash
-crackmapexec smb <target> -u '' -p '' --shares
-```
-
-- Enumerate shares (authenticated):
-
-```bash
-crackmapexec smb <target> -u username -p password --shares
-```
 
 - Enumerate logged-in users:
 
@@ -861,9 +911,9 @@ crackmapexec smb <target> -u username -p password -X 'Get-Process' # PowerShell
 
 >A **null session** is an unauthenticated SMB connection established with an empty username and password.
 
->[!note] Null sessions were practically _standard_ on Windows 2000 networks. Microsoft restricted them significantly in Windows XP SP2 and Server 2003, but misonfigurations are still common.
+>[!note]+ Null sessions were effectively standard in Windows 2000 environments. Microsoft significantly tightened restrictions starting with Windows XP SP2 and Server 2003. 
+> - That said, Samba servers and legacy systems remain misconfigured regularly enough that checking for null sessions is always worth the two seconds it takes.
 
->[!note] Null sessions grant clients access to the `IPC$` share.
 
 - Check for null sessions using `smbclient`:
 
@@ -888,6 +938,7 @@ smbclient //<target>/<share> -U anonymous
 > 	IPC$            IPC       IPC Service (attcsvc-linux Samba)
 > ```
 
+
 - Nmap [`smb-enum-shares`](https://nmap.org/nsedoc/scripts/smb-enum-shares.html) script (attempts a null session):
 
 ```bash
@@ -902,6 +953,9 @@ rpcclient -U '%' <target>
 
 >[!note] See [[#rpcclient]] for a command cheat sheet.
 ## Brute-forcing credentials
+
+>[!tip]+
+>Before brute-force, _always_ pull the password policy. If there's an account lockout threshold, adjust your rate accordingly.
 
 - SMB credentials brute-force using Medusa:
 
@@ -962,7 +1016,6 @@ exploit
 crackmapexec smb 192.168.1.11 -u usernames.txt -p /usr/share/seclists/Passwords/Leaked-Databases/rockyou.txt --local-auth
 ```
 
-
 >[!example]+ Example: Cracking SMB password with CME
 > ```bash
 > crackmapexec smb 10.129.203.6 -u "jason" -p pws.list --local-auth
@@ -977,16 +1030,17 @@ crackmapexec smb 192.168.1.11 -u usernames.txt -p /usr/share/seclists/Passwords/
 > SMB         10.129.203.6    445    ATTCSVC-LINUX    [+] ATTCSVC-LINUX\jason:34c8zuNBo91!@28Bszh 
 > ```
 
->[!tip]+
+>[!tip]
 >By default, CME exits as soon as it finds a successful login. To continue brute-force even after that to find additional users and passwords, add the `--continue-on-success` option to the command.
+
 ## RPC Over SMB
 
 > **RPC (Remote Procedure Call)** is a communication protocol that enables a process on one host to execute a procedure on a remote host, abstracting the underlying network transport from the calling application.
 
-> **MS-RPCE (Microsoft Remote Procedure Call Protocol Extensions)** is Microsoft's extension of the DCE/RPC standard that supports RPC transport over SMB named pipes, enabling remote access to Windows management interfaces via standard SMB connections.
+> **MS-RPCE (Microsoft Remote Procedure Call Protocol Extensions)** is Microsoft's extension of the DCE/RPC standard that supports RPC transport over SMB named pipes and provides remote access to Windows management interfaces via standard SMB sessions.
 
 - RPC over SMB works by encapsulating **Remote Procedure Call (RPC)** data directly within SMB transactions, specifically using **named pipes** over the hidden **`IPC`$ share**:
-	- The client connects to the `IPC$` share on the target server (TCP port `445`) and authenticates (NTLM/Kerberos/null session), then opens a **named pipe** (e.g, `\pipe\samr`). 
+	- The client connects to the `IPC$` share on the target server (TCP port `445`) and authenticates (NTLM/Kerberos/null session), then opens a **named pipe** (e.g, `\pipe\samr`, `\lsarpc`, `\srcsvc`, `\winreg`, etc.). 
 	- Once the pipe is open, the client sends SMB Transaction packets that wrap the raw RPC data. 
 	- The server strips the SMB wrapper to process the RPC request, executes the operation, and returns the marshalled response through the same pipe mechanism.
 
@@ -1007,7 +1061,7 @@ crackmapexec smb 192.168.1.11 -u usernames.txt -p /usr/share/seclists/Passwords/
 \\target\IPC$\PIPE\<pipe>
 ```
 
-- Some pipes allow **anonymous/null session access** (depending on configuration), others require **authenticated or administrative privileges**.
+- Some pipes allow **anonymous/null session access** (depending on configuration), others require authentication/administrative privileges.
 
 ### rpcclient
 
@@ -1132,23 +1186,16 @@ For a complete list of `rpcclient` commands, see:
 - [`NTLM — Wikipedia`](https://en.wikipedia.org/wiki/NTLM)
 
 - [`SMB (Server Message Block) — Hackviser`](https://hackviser.com/tactics/pentesting/services/smb)
-
 - [`Smbclient — Hackviser`](https://hackviser.com/tactics/tools/smbclient)
 - [`Rpcclient — Hackviser`](https://hackviser.com/tactics/tools/rpcclient)
 - [`rpclient man page`](https://www.samba.org/samba/docs/current/man-html/rpcclient.1.html)
 - [`SMB Access from Linux Cheat Sheet`](https://www.willhackforsushi.com/sec504/SMB-Access-from-Linux.pdf)
+- [`A little guide to SMB enumeration — Hacking Articles`](https://www.hackingarticles.in/a-little-guide-to-smb-enumeration/)
 
+To be done:
+- Add SMB-relevant Impacket scripts
+- SMB attack surface overview section +
+- Vulnerability scanning and decision tree section
+- What to look for section in enumeration
+- RCE section
 
-
-## Appendix A: Tools
-
-
-| Command         | Description                               | Usage                                     |
-| --------------- | ----------------------------------------- | ----------------------------------------- |
-| `smbclient`     | Connect to an SMB/CIFS server             | `smbclient //server/share`                |
-| `smbget`        | Download files from an SMB/CIFS server    | `smbget smb://server/share/file`          |
-| `smbpasswd`     | Change a user's SMB password              | `smbpasswd -r server -U username`         |
-| `smbstatus`     | Display information about SMB connections | `smbstatus`                               |
-| `smbtree`       | List SMB/CIFS shares on a network         | `smbtree`                                 |
-| `mount -t cifs` | Mount an SMB/CIFS share                   | `mount -t cifs //server/share /mnt/point` |
-| `umount`        | Unmount an SMB/CIFS share                 | `umount /mnt/point`                       |
