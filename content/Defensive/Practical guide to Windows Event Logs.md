@@ -909,4 +909,3 @@ In the `SilkETW` command, we selectively target a subset of events, indicated by
 - [`Cobalt Strike 3.11 – The snake that eats its tail — Cobalt Strike`](https://www.cobaltstrike.com/blog/cobalt-strike-3-11-the-snake-that-eats-its-tail)
 - [`Detecting .NET/C# injection (Execute-Assembly) — redhead0ntherun, Medium`](https://redhead0ntherun.medium.com/detecting-net-c-injection-execute-assembly-1894dbb04ff7)
 - [`Threat Hunting with ETW events and HELK — Part 1: Installing SilkETW — Roberto Rodriguez, Medium`](https://medium.com/threat-hunters-forge/threat-hunting-with-etw-events-and-helk-part-1-installing-silketw-6eb74815e4a0)
-
