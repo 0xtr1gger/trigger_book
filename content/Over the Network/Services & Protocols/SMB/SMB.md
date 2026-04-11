@@ -2,7 +2,8 @@
 created: 2026-03-29
 tags:
   - network_services
-  - net_hack
+  - over_the_network
+color: "linear-gradient(45deg, #23d4fd 0%, #3a98f0 50%, #b721ff 100%)"
 ---
 ## SMB
 
@@ -14,7 +15,6 @@ tags:
 
 - SMB can also be used for **inter-process communication (IPC)** over a network — this fact becomes very important during exploitation (see [[#RPC Over SMB]]).
 
-## Protocol internals
 ### Shares
 
  > An **SMB share** is a named resource — a filesystem directory, printer, or IPC endpoint — exported by an SMB server and made accessible to authenticated or unauthenticated clients over a network.
@@ -107,18 +107,7 @@ Under the hood, SMB delegates actual credential verification to one of two proto
 
 Windows automatically creates a set of **hidden administrative shares** (identified by the `$` suffix). These are built-in, can't normally be removed permanently, and are intended for remote system management. 
 
-
 >[!note] The `$` suffix hides shares from casual browsing (`net view`), but they're fully accessible if you know the name.
-
-| Share            | Maps To                             | Notes                                                                                  |
-| ---------------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
-| `C$`, `D$`, etc. | Drive root (`C:\`, `D:\`)           | Full filesystem access. Admin-only by default.                                         |
-| `ADMIN$`         | `%SystemRoot%` (`C:\Windows`)       | Used for remote admin; PsExec uploads binaries here.                                   |
-| `IPC$`           | Named pipes                         | No filesystem access. Used for RPC, auth, SCM, WMI. Often accessible in null sessions. |
-| `PRINT$`         | `C:\Windows\System32\spool\drivers` | Printer drivers.                                                                       |
-| `SYSVOL`         | Domain controller share             | Group Policy objects, scripts. Only on DCs.                                            |
-| `NETLOGON`       | DC share                            | Logon scripts for domain users. Only on DCs.                                           |
-
 
 | Share                                   | Description                                                                                                                                                                                                                                                                                                                                                                                        |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -134,16 +123,9 @@ Windows automatically creates a set of **hidden administrative shares** (ident
 ```bash
 smbclient //target/IPC$ -N
 ```
-
-
 ## SMB enumeration
 
->[!note]+ Tools
->- [`smbclient`](https://www.samba.org/samba/docs/current/man-html/smbclient.1.html)
->- [`smbmap`](https://github.com/ShawnDEvans/smbmap)
->- `rcpclient`
-
-### Nmap port scanning and version detection
+### Nmap scanning
 
 - Nmap SMB port scanning and version detection:
 
@@ -838,7 +820,7 @@ enum4linux-ng -N <target>
 > enum4linux-ng -A <target>
 > ```
 
-### Imoacket
+### Impacket
 ### CrackMapExec
 
 > [CrackMapExec (CME)](https://github.com/byt3bl33d3r/CrackMapExec) — a post-exploitation/network assessment tool; can be used for SMB enumeration.
@@ -1033,6 +1015,7 @@ crackmapexec smb 192.168.1.11 -u usernames.txt -p /usr/share/seclists/Passwords/
 >[!tip]
 >By default, CME exits as soon as it finds a successful login. To continue brute-force even after that to find additional users and passwords, add the `--continue-on-success` option to the command.
 
+>[!note] See [[Password wordlists and default credentials]].
 ## RPC Over SMB
 
 > **RPC (Remote Procedure Call)** is a communication protocol that enables a process on one host to execute a procedure on a remote host, abstracting the underlying network transport from the calling application.
@@ -1198,4 +1181,5 @@ To be done:
 - Vulnerability scanning and decision tree section
 - What to look for section in enumeration
 - RCE section
+- Replace CME with NetExec
 

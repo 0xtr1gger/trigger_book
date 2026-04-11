@@ -2,7 +2,8 @@
 created: 2026-03-31
 tags:
   - network_services
-  - net_hack
+  - over_the_network
+color: "linear-gradient(45deg, #23d4fd 0%, #3a98f0 50%, #b721ff 100%)"
 ---
 ## NFS
 
@@ -524,7 +525,7 @@ umount /mnt/nfs
 	- `all_squash,anonuid=1000,anongid=1000`, though map all users to `1000`, may unintentionally give attacker the permissions of a real user.
 ## Enumeration
 
-### Nmap port scanning and version detection
+### Nmap scanning
 
 - Nmap NFS port scanning and version detection:
 
@@ -587,7 +588,7 @@ sudo nmap -p111,2049 -sV --script rpcinfo 192.168.1.11
 
 - Common NFS-related NSE scripts:
 
-| Script                                                                | Categoroes                                | Description                                                              |
+| Script                                                                | Categories                                | Description                                                              |
 | --------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------ |
 | [`nfs-ls`](https://nmap.org/nsedoc/scripts/nfs-ls.html)               | `discovery`, `safe`                       | Attempts to get useful information about files from NFS exports.         |
 | [`nfs-showmount`](https://nmap.org/nsedoc/scripts/nfs-showmount.html) | `discovery`, `safe`                       | Shows NFS exports, like `showmount -e`.                                  |

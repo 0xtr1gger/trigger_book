@@ -95,7 +95,7 @@ At this point, no credential or challenge has yet been presented.
 	- Optional session keys and further negotiated options can also be embedded depending on the negotiated capabilities from earlier stages.
 
 The Server then verifies the Client's challenge response by recomputing the expected response based on the stored NT hash of the account and the original challenge.
-No plaintext password is transmitted.
+No cleartext password is transmitted.
 
 >[!note] For the full list of `NegotiateFlags` and their possible values, see [`NEGOTIATE — Microsoft Learn`](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/99d90ff4-957f-4c8a-80e4-5bfe5a9a9832).
 

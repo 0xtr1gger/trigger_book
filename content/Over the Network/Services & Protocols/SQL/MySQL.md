@@ -3,7 +3,8 @@ created: 2026-04-04
 tags:
   - SQL
   - network_services
-  - net_hack
+  - over_the_network
+color: "linear-gradient(45deg, #23d4fd 0%, #3a98f0 50%, #b721ff 100%)"
 ---
 ## MySQL
 
@@ -72,7 +73,7 @@ MySQL supports [multiple authentication methods](https://dev.mysql.com/doc/dev/m
 
 ## Enumeration
 
-### Nmap port scanning
+### Nmap scanning
 
 - Check default MySQL port and run version scan:
 
@@ -101,15 +102,15 @@ nmap -sV --script mysql-* -p 3306 <target_ip>
 
 - Nmap scripts:
 
-| Script                                                                              | Description                                                                                                                                                                                                                              | Categories                  | Requires authentication? ] |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | -------------------------- |
-| [`mysql-empty-password`](https://nmap.org/nsedoc/scripts/mysql-empty-password.html) | Checks for empty passwords for `root` or `anonymous`.<br>No authentication required.                                                                                                                                                     | `intrusive`, `auth`         | ❌                          |
-| [`mysql-brute`](https://nmap.org/nsedoc/scripts/mysql-brute.html)                   | Performs credential brute-force; uses `userdb` and `passdb` wordlists.<br>No authentication required.                                                                                                                                    | `intrusive`, `brute`        | ❌                          |
-| [`mysql-enum`](https://nmap.org/nsedoc/scripts/mysql-enum.html)                     | Enumerates valid users on MySQL server.<br>No authentication required.                                                                                                                                                                   | `intrusive`, `brute`        | ❌                          |
-| [`mysql-databases`](https://nmap.org/nsedoc/scripts/mysql-databases.html)           | Attempts to list all databases on a MySQL server.<br>Requires valid MySQL credentials (`SHOW DATABASES` privileges).                                                                                                                     | `discovery`, `intrusive`    | ✅                          |
-| [`mysql-dump-hashes`](https://nmap.org/nsedoc/scripts/mysql-dump-hashes.html)       | Dumps the password hashes from an MySQL server (in a format suitable for cracking with tools like JohnTheRipper). <br>`root` privileges are required.<br>Requires valid MySQL credentials; `root` privileges (`SELECT` on `mysql.user`). | `auth`, `discovery`, `safe` | ✅                          |
-| [`mysql-variables`](https://nmap.org/nsedoc/scripts/mysql-variables.html)           | Attempts to show all variables on a MySQL server.<br>Requires valid MySQL credentials (`SHOW DATABASES` privileges).                                                                                                                     | `discovery`, `intrusive`    | ✅                          |
-| [`mysql-query`](https://nmap.org/nsedoc/scripts/mysql-query.html)                   | Runs a query against a MySQL database and returns the results as a table.<br>Requires valid MySQL credentials.                                                                                                                           | `auth`, `discovery`, `safe` | ✅                          |
+| Script                                                                              | Categories                  | Description                                                                                                                                                                                                                              | Requires authentication? |
+| ----------------------------------------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| [`mysql-empty-password`](https://nmap.org/nsedoc/scripts/mysql-empty-password.html) | `intrusive`, `auth`         | Checks for empty passwords for `root` or `anonymous`.<br>No authentication required.                                                                                                                                                     | ❌                        |
+| [`mysql-brute`](https://nmap.org/nsedoc/scripts/mysql-brute.html)                   | `intrusive`, `brute`        | Performs credential brute-force; uses `userdb` and `passdb` wordlists.<br>No authentication required.                                                                                                                                    | ❌                        |
+| [`mysql-enum`](https://nmap.org/nsedoc/scripts/mysql-enum.html)                     | `intrusive`, `brute`        | Enumerates valid users on MySQL server.<br>No authentication required.                                                                                                                                                                   | ❌                        |
+| [`mysql-databases`](https://nmap.org/nsedoc/scripts/mysql-databases.html)           | `discovery`, `intrusive`    | Attempts to list all databases on a MySQL server.<br>Requires valid MySQL credentials (`SHOW DATABASES` privileges).                                                                                                                     | ✅                        |
+| [`mysql-dump-hashes`](https://nmap.org/nsedoc/scripts/mysql-dump-hashes.html)       | `auth`, `discovery`, `safe` | Dumps the password hashes from an MySQL server (in a format suitable for cracking with tools like JohnTheRipper). <br>`root` privileges are required.<br>Requires valid MySQL credentials; `root` privileges (`SELECT` on `mysql.user`). | ✅                        |
+| [`mysql-variables`](https://nmap.org/nsedoc/scripts/mysql-variables.html)           | `discovery`, `intrusive`    | Attempts to show all variables on a MySQL server.<br>Requires valid MySQL credentials (`SHOW DATABASES` privileges).                                                                                                                     | ✅                        |
+| [`mysql-query`](https://nmap.org/nsedoc/scripts/mysql-query.html)                   | `auth`, `discovery`, `safe` | Runs a query against a MySQL database and returns the results as a table.<br>Requires valid MySQL credentials.                                                                                                                           | ✅                        |
 **No authentication required:**
 
 - `mysql-empty-password`: Check for empty `root` password:
@@ -275,7 +276,7 @@ mysql -h <target> -u <username> -p --skip-ssl
 mysql -u <username> -S /var/run/mysqld/mysqld.sock
 ```
 
-## Credential brute-force 
+## Brute-forcing credentials
 
 Dictionary attacks with Hydra:
 
@@ -305,6 +306,7 @@ hydra -l root -P passwords.txt -t 4 mysql://<target>
 
 > [!note] MySQL has no built-in account lockout by default, but some hardened configurations or connection plugins may block repeated failures. Keep thread count low (`-t 4`) on engagements to avoid noise.
 
+>[!note] See [[Password wordlists and default credentials]].
 ## MySQL enumeration
 
 ### Version and server information
@@ -679,7 +681,7 @@ hashcat -m 3200 hashes.txt /usr/share/wordlists/rockyou.txt
 
 
 - [`MySQL Injection — Payloads All The Things`](https://swisskyrepo.github.io/PayloadsAllTheThings/SQL%20Injection/MySQL%20Injection/)
-- [`MySQL — hackviser`](https://hackviser.com/tactics/pentesting/services/mysql)
+- [`MySQL — Hackviser`](https://hackviser.com/tactics/pentesting/services/mysql)
 
 
 - [`MySQL LOAD_FILE() function — w3resource`](https://www.w3resource.com/mysql/string-functions/mysql-load_file-function.php)
