@@ -11,3 +11,6 @@ In the beginning, you will see a lot of drafts, but this repo will gradually get
 P.S. I don't sync my Obsidian vault directly, rather, copy what I think can already be seen, whether drafts of finished notes (though each note may be a subject to further updates).
 
 It'll probably always be under development. Notes are based on what I learn, and I never stop learning :)
+
+
+>[!quote] No obvious things exist.
