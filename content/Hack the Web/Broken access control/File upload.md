@@ -48,7 +48,7 @@ tags:
 
 - **File overwrite**
 	- If path traversal sequences are permitted in filenames, an attacker can write files to arbitrary locations, overwriting configuration files, scripts, or SSH keys.
-	- See [[Hack the Web/🛠️ Broken access control/🛠️ Path traversal|🛠️ Path traversal]].
+	- See [[🛠️ Path traversal|🛠️ Path traversal]].
 
 - **Denial of Service (DoS)**
 	- Decompression bombs (a ZIP containing a ZIP containing a ZIP...) or pixel flood attacks (a PNG claiming extreme dimensions) can exhaust CPU, memory, or disk resources of the target server, taking it offline.

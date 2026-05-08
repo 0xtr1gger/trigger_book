@@ -1047,6 +1047,8 @@ curl -s -X POST https://target.com/xmlrpc.php \
 >sudo gem install wpscan
 >```
 
+### `--enumerate`
+
 - Full default enumeration (vulnerable plugins, themes, users, config backups, DB exports):
 
 ```bash
@@ -1313,7 +1315,7 @@ wpscan --url https://target.com \
 | Option                | Description                                                                                                                  |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `--url <url>`         | Target URL (required).<br>Allowed Protocols: `http`, `https` (in none provided, default: `http`).                            |
-| `--enumerate <opts>`  | What to enumerate: `vp`, `ap`, `p`, `vt`, `at`, `t`, `tt`, `cb`, `dbe`, `u`, `m`                                             |
+| `--enumerate <opts>`  | What to enumerate: `vp`, `ap`, `p`, `vt`, `at`, `t`, `tt`, `cb`, `dbe`, `u`, `m`.                                            |
 | `--api-token <token>` | The WPScan API Token to display vulnerability data, available at [`https://wpscan.com/profile`](https://wpscan.com/profile). |
 
 
@@ -1381,4 +1383,4 @@ wpscan --url https://target.com \
 
 - [`WPScan Vulnerability Database — WPScan`](https://wpscan.com/plugins)
 - [`SecLists CMS Wordlists`](https://github.com/danielmiessler/SecLists/tree/master/Discovery/Web-Content/CMS) 
-
+- [`WPScan — Hackviser`](https://hackviser.com/tactics/tools/wpcan)
