@@ -59,13 +59,13 @@ Structure and plan:
 > - `CONCAT_WS('~','st','ri', 'ng')` → `st~ri~ng` (the first argument is a separator; `NULL` are skipped).
 #### Substrings
 
-| DBMS           | Syntax                                                                    | Result |
-| -------------- | ------------------------------------------------------------------------- | ------ |
-| **MySQL**      | `SELECT SUBSTRING('string', 3, 4);` ·<br>`SELECT SUBSTRING('string', 3);` | `ring` |
-| **MSSQL**      | `SELECT SUBSTRING('string', 3, 4);`                                       | `ring` |
-| **PostgreSQL** | `SELECT SUBSTRING('string', 3, 4);`                                       | `ring` |
-| **Oracle**     | `SELECT SUBSTR('string', 3, 4);`                                          | `ring` |
-| **SQLite**     | `SELECT SUBSTR('string', 3, 4);`                                          | `ring` |
+| DBMS           | Syntax                                      | Example                                       |
+| -------------- | ------------------------------------------- | --------------------------------------------- |
+| **MySQL**      | `SUBSTRING(<string>, <position>, <length>)` | `SELECT SUBSTRING('string', 3, 4);` -> `ring` |
+| **MSSQL**      | `SUBSTRING(<string>, <position>, <length>)` | `SELECT SUBSTRING('string', 3, 4);` -> `ring` |
+| **PostgreSQL** | `SUBSTRING(<string>, <position>, <length>)` | `SELECT SUBSTRING('string', 3, 4);` -> `ring` |
+| **Oracle**     | `SUBSTR(<string>, <position>, <length>)`    | `SELECT SUBSTR('string', 3, 4);` -> `ring`    |
+| **SQLite**     | `SUBSTR(<string>, <position>, <length>)`    | `SELECT SUBSTR('string', 3, 4);` -> `ring`    |
 >[!note] All these functions use **`1`-based** indexing. Position `1` = first character (not `0` like in C).
 #### Length 
 

