@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="snW-sa_nZLqOgmmR88BC">
+    <mxGraphModel dx="661" dy="1307" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-15" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=light-dark(#6D75FE,#6D75FE);arcSize=4;fontColor=light-dark(#6D75FE,#6D75FE);" value="" vertex="1">
+          <mxGeometry height="50" width="90" x="122.5" y="920" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-1" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;strokeColor=light-dark(#FFCC99,#FFCC99);dashed=1;" value="" vertex="1">
+          <mxGeometry height="240" width="500" x="265" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-2" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontSize=16;fontFamily=monospace;" value="&lt;div style=&quot;line-height: 100%;&quot;&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(255, 204, 153), rgb(255, 204, 153));&quot;&gt;POST / HTTP/1.1&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(255, 204, 153), rgb(255, 204, 153));&quot;&gt;Host: example.com&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(255, 204, 153), rgb(255, 204, 153));&quot;&gt;Content-Type: application/x-www-form-urlencoded&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(255, 204, 153), rgb(255, 204, 153));&quot;&gt;Content-Length: 6&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(255, 204, 153), rgb(255, 204, 153));&quot;&gt;Transfer-Encoding: chunked&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;color: light-dark(rgb(255, 204, 153), rgb(255, 204, 153));&quot;&gt;␍␊&lt;/span&gt;&lt;/p&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(255, 204, 153), rgb(255, 204, 153));&quot;&gt;3&lt;span style=&quot;background-color: transparent;&quot;&gt;␍␊&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(255, 204, 153), rgb(255, 204, 153));&quot;&gt;ABC&lt;span style=&quot;background-color: transparent;&quot;&gt;␍␊&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(255, 204, 153), rgb(255, 204, 153));&quot;&gt;X&lt;span style=&quot;background-color: transparent;&quot;&gt;␍␊&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="200" width="460" x="285" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-4" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;fontFamily=monospace;fontColor=light-dark(#FFCC99,#FFCC99);" value="CLIENT" vertex="1">
+          <mxGeometry height="30" width="60" x="137.5" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=light-dark(#FFCC99,#FFCC99);arcSize=4;" value="" vertex="1">
+          <mxGeometry height="50" width="90" x="122.5" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-8" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;strokeColor=light-dark(#99CCFF,#99CCFF);dashed=1;" value="" vertex="1">
+          <mxGeometry height="240" width="500" x="265" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-9" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontSize=16;fontFamily=monospace;" value="&lt;div style=&quot;line-height: 100%;&quot;&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(153, 204, 255), rgb(153, 204, 255));&quot;&gt;POST / HTTP/1.1&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(153, 204, 255), rgb(153, 204, 255));&quot;&gt;Host: example.com&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(153, 204, 255), rgb(153, 204, 255));&quot;&gt;Content-Type: application/x-www-form-urlencoded&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b style=&quot;color: light-dark(rgb(153, 204, 255), rgb(153, 204, 255));&quot;&gt;Content-Length: 6&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(153, 204, 255), rgb(153, 204, 255));&quot;&gt;Transfer-Encoding: chunked&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;color: light-dark(rgb(153, 204, 255), rgb(153, 204, 255));&quot;&gt;␍␊&lt;/span&gt;&lt;/p&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(153, 204, 255), rgb(153, 204, 255));&quot;&gt;3&lt;span style=&quot;background-color: transparent;&quot;&gt;␍␊&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(153, 204, 255), rgb(153, 204, 255));&quot;&gt;ABC&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(255, 204, 153), rgb(204, 0, 0));&quot;&gt;␍␊&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(255, 204, 153), rgb(204, 0, 0));&quot;&gt;X&lt;span style=&quot;background-color: transparent;&quot;&gt;␍␊&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="200" width="460" x="285" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-10" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;fontFamily=monospace;fontColor=light-dark(#99CCFF,#99CCFF);" value="reverse proxy" vertex="1">
+          <mxGeometry height="30" width="60" x="137.5" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-12" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fontColor=light-dark(#99CCFF,#99CCFF);strokeColor=light-dark(#99CCFF,#99CCFF);fillColor=none;" value="" vertex="1">
+          <mxGeometry height="110" width="110" x="112.5" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-13" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;fontFamily=monospace;fontColor=light-dark(#99CCFF,#99CCFF);" value="Content-Length" vertex="1">
+          <mxGeometry height="40" width="160" x="87.5" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-14" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;fontFamily=monospace;fontColor=light-dark(#6D75FE,#6D75FE);" value="CLIENT" vertex="1">
+          <mxGeometry height="30" width="60" x="137.5" y="930" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-16" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;strokeColor=light-dark(#6D75FE,#6D75FE);dashed=1;" value="" vertex="1">
+          <mxGeometry height="240" width="500" x="265" y="920" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-17" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=top;rounded=0;fontSize=16;fontFamily=monospace;" value="&lt;div style=&quot;line-height: 100%;&quot;&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(109, 117, 254), rgb(109, 117, 254));&quot;&gt;POST / HTTP/1.1&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(109, 117, 254), rgb(109, 117, 254));&quot;&gt;Host: example.com&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(109, 117, 254), rgb(109, 117, 254));&quot;&gt;Content-Type: application/x-www-form-urlencoded&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(109, 117, 254), rgb(109, 117, 254));&quot;&gt;Content-Length: 6&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;b style=&quot;color: light-dark(rgb(109, 117, 254), rgb(109, 117, 254));&quot;&gt;Transfer-Encoding: chunked&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;p&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot;color: light-dark(rgb(109, 117, 254), rgb(109, 117, 254));&quot;&gt;␍␊&lt;/span&gt;&lt;/p&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(109, 117, 254), rgb(109, 117, 254));&quot;&gt;3&lt;span style=&quot;background-color: transparent;&quot;&gt;␍␊&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(109, 117, 254), rgb(109, 117, 254));&quot;&gt;ABC&lt;br&gt;?&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="200" width="460" x="285" y="940" as="geometry" />
+        </mxCell>
+        <mxCell id="a1VkJs9YSNcyRmcLA-Uo-18" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;fontFamily=monospace;fontColor=light-dark(#6D75FE,#6D75FE);" value="Transfer-Encoding: chunked" vertex="1">
+          <mxGeometry height="40" width="195" x="70" y="980" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
