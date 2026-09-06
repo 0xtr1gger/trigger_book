@@ -1,0 +1,62 @@
+# Author preferences and learned heuristics
+# This file is dynamically updated via the /editorial-learn workflow upon user approval.
+
+version: 1.0.0
+last_updated: "2026-09-06"
+
+style:
+  reader_perspective: "you"
+  mandatory_contractions: true
+  forbid_dangling_participles: true
+  banned_vocabulary:
+    - mechanics
+    - under the hood
+    - in a nutshell
+    - at its core
+    - crucial
+    - essential
+    - pivotal
+    - vital
+    - leverage
+    - utilize
+    - delve
+    - harness
+    - seamlessly
+    - robust
+    - comprehensive
+    - basically
+    - simply
+    - obviously
+    - clearly
+
+  substitutions:
+    leverage: "use | abuse | exploit"
+    utilize: "use"
+    mechanics: "how it works | security model"
+    attacker: "you (for procedures) | low-privileged user / adversary (for context)"
+
+formatting:
+  heading_case: "sentence"
+  procedural_headings: "gerund" # e.g., "## Enumerating unquoted service paths"
+  indentation: "tabs"
+  list_style: "bullets"
+  code_blocks:
+    require_language_tag: true
+    disallow_prompts: true # no PS C:\> or C:\>
+  wikilinks:
+    allow_backticks: false # [[Link]] NOT `[[Link]]`
+    internal_format: "wikilinks" # [[Note]]
+    external_format: "markdown" # [Title](https://...)
+
+terminology:
+  preferred_terms:
+    listener_ip: "<attacker_ip_address> in commands, 'listener IP' in prose"
+    binPath: "binPath (exact Windows SCM property)"
+    executable: "executable / executable file (not binary/payload when referring to disk files)"
+    service_path: "service executable path"
+    payload: "code or file demonstrating execution"
+    permissions: "permissions on (preferred over 'permissions over')"
+    write_access: "write access to (preferred over 'write access over')"
+
+learned_exceptions: []
+
