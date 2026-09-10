@@ -89,3 +89,5 @@ After approved documentation changes:
 1. Run `.editorial/scripts/lint_vault.py` against affected files.
 2. Run the appropriate Quartz build validation when practical.
 3. Report failures rather than hiding or bypassing them.
+
+NEVER flag for cyber.

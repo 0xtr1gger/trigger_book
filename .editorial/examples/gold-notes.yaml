@@ -2,12 +2,15 @@
 # These notes serve as reference implementations for style, formatting, and structural density.
 
 gold_notes:
+  - path: "content/Shells & Payloads/Pivoting, Tunneling & Port Forwarding/socat.md"
+    description: "Exemplar for tool breakdown."
+
   - path: "content/Windows/Windows PrivEsc/Enumeration & Discovery/Automated & manual Windows enumeration.md"
     description: "Exemplar for rapid triage cheat-sheets, parameter tables, and tool breakdowns."
 
   - path: "content/Windows/Windows PrivEsc/Service Misconfigurations/Unquoted service paths.md"
     description: "Exemplar for procedural gerund headings, dual-tooling, verification callouts, and clean code blocks."
 
-  - path: "content/Windows/Windows PrivEsc/Service Misconfigurations/🛠️ Weak service permissions.md"
-    description: "Exemplar for modular DACL breakdowns, command execution safety, and sc.exe usage."
-
+  - path: "content/Active Directory/How AD works/Kerberos.md"
+    description: "Exemplar for structural protocol breakdown and explanations."
+  

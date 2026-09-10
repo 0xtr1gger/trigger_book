@@ -6,14 +6,14 @@ This file provides curated few-shot transformation examples. Models reviewing do
 
 ### Case 001: Dangling `-ing` participle tails
 - ❌ **Bad:** "The service executes binary files with SYSTEM privileges, allowing an attacker to escalate privileges."
-- ✅ **Good:** "The service executes as `SYSTEM`. Replacing the binary gives you `SYSTEM` code execution."
+- ✅ **Good:** "The service executes as `SYSTEM`; if you replace its binary, your code will run as `SYSTEM` on next service start."
 - **Rationale:** Eliminate dangling participle result clause; replace passive attacker reference with direct cause-and-effect addressing the reader as "you".
 
 ---
 
 ### Case 002: AI buzzwords and academic fluff
 - ❌ **Bad:** "In this section, we delve into the crucial mechanics of utilizing BloodHound to seamlessly map Active Directory relationships."
-- ✅ **Good:** "BloodHound maps Active Directory domain relationships and attack paths by querying LDAP, SAMR, and session endpoints."
+- ✅ **Good:** "- BloodHound maps Active Directory domain relationships and attack paths by querying LDAP, SAMR, and session endpoints."
 - **Rationale:** Eliminated "delve", "crucial mechanics", "utilizing", "seamlessly", and meta-commentary "In this section, we...".
 
 ---
@@ -42,7 +42,7 @@ This file provides curated few-shot transformation examples. Models reviewing do
 
 ### Case 005: Wikilink syntax formatting
 - ❌ **Bad:** "Refer to `[[🛠️ Pass-the-Hash]]` or [Kerberos](content/Active%20Directory/How%20AD%20works/Kerberos.md)."
-- ✅ **Good:** "Refer to [[🛠️ Pass-the-Hash]] or [[Kerberos]]."
+- ✅ **Good:** ">[!note] See [[🛠️ Pass-the-Hash]] and [[Kerberos]]."
 - **Rationale:** Wikilinks must never be enclosed in backticks, and internal vault references must use `[[...]]` wikilinks, not Markdown file paths.
 
 ---
@@ -55,11 +55,10 @@ This file provides curated few-shot transformation examples. Models reviewing do
   ```
 - ✅ **Good:**
   ```markdown
-  >[!abstract]+ Scope
-  > Windows access token architecture: primary vs. impersonation tokens, impersonation levels, token privileges, and privilege escalation mechanics.
+  >[!abstract]+ **Scope**: Windows access tokens: primary vs. impersonation tokens, impersonation levels, token privileges, and privilege escalation techniques.
 
   ## How access tokens work
-  An access token is an internal kernel object (`_TOKEN`) that describes the security context of a process or thread.
+  - An access token is an internal kernel object (`_TOKEN`) that describes the security context of a process or thread.
   ```
 - **Rationale:** Eliminate greetings, exam prep commentary, and meta-introductions; replace with crisp Scope callout followed immediately by the technical model.
 
