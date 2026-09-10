@@ -1,10 +1,3 @@
----
-created: 2026-08-22
-updated: 2026-08-25
-tags:
-  - web_hacking
----
-
 >[!abstract]+ **Scope**: Root cause of HTTP desynchronization vulnerabilities, how the attack works, vulnerability detection methodology, and exploitation examples.
 ## On HTTP and proxies
 
@@ -15,7 +8,7 @@ tags:
 
 - A web page usually requires more than its main HTML document. Images, stylesheets, scripts, and other resources also need to be fetched. Under HTTP/1.0, all these resources were retrieved **sequentially, over separate TCP connections**. 
 
-![[hrs_1_http.0.svg]]
+<img width="620" height="522" alt="hrs_1_http 0" src="https://github.com/user-attachments/assets/93a20a8d-95b2-472d-9c83-032f2a26232a" />
 
 - Opening a new TCP connection for each resource introduces substantial latency, mainly due to handshake overhead. Page load time becomes extremely slow (for modern standards).
 #### Unofficial keep-alive extensions
@@ -35,7 +28,8 @@ Connection: Keep-Alive
 Connection: close
 ```
 
-![[hrs_2_http.0.svg]]
+<img width="620" height="523" alt="hrs_2_http 0" src="https://github.com/user-attachments/assets/1cf0d3de-d50f-4515-885f-584d1691a6f8" />
+
 
 - This mechanism was never standardized in HTTP/1.0. Implementations varied wildly across vendors — different timeouts, maximum request counts per socket, inconsistent error handling, and other details. It worked, but unreliably.
 
@@ -50,7 +44,7 @@ Connection: close
 
 >[!important] HTTP/1.1 doesn't require a `Connection: keep-alive` header to maintain persistent connections; persistence is the protocol default. Only the `Connection: close` header is required to signal connection termination.
 
-![[hrs_3.svg]]
+<img width="620" height="522" alt="hrs_3" src="https://github.com/user-attachments/assets/c8941279-29c6-4aee-b5f3-7e8a810b3cf0" />
 
 ### HTTP pipelining and HOL
 
@@ -58,8 +52,7 @@ Connection: close
 - So, a client can requests multiple resources nearly at the same time and then wait for the responses instead of waiting for the previous response to arrive to send the next request.
 - The server must return the corresponding responses **in the exact same order** as the requests were received (FIFO, First-In, First-Out). 
 
-
-![[hrs_4.svg]]
+<img width="620" height="573" alt="hrs_4" src="https://github.com/user-attachments/assets/b8494208-dcff-4e9c-a998-477d04e6c5b9" />
 
 - This also means that one slow request/response (e.g., executing a slow database query or sending a large file) **delays all subsequent queued responses**. This condition is known as **head-of-line (HOL) blocking**
 - This is the reason why developers mostly disable HTTP/1.1 pipelining by default.
@@ -169,7 +162,8 @@ first chunk␍␊
 - Production deployments rarely route client HTTP traffic directly to the backend.
 - Inbound requests traverse intermediary nodes: reverse proxies, load balancers, CDN edge servers, and WAFs (Web Application Firewalls).
 
-![[hrs_5.svg|700]]
+<img width="502" height="97" alt="hrs_5" src="https://github.com/user-attachments/assets/5b1879aa-2b19-4325-924e-36054b87920f" />
+
 ### Connection coalescing
 
 - For a reverse proxy, establishing a fresh TCP connection to backend nodes for every forwarded request **negates** the performance benefits of persistent connections maintained with clients
@@ -178,8 +172,7 @@ first chunk␍␊
 
 >**Connection coalescing** is the practice of routing multiple incoming client requests through a single maintained TCP connection to an upstream server. This eliminates per-request TCP handshake overhead between the proxy and the backend.
 
-
-![[hrs_6_coalescing.svg]]
+<img width="460" height="592" alt="hrs_6_coalescing" src="https://github.com/user-attachments/assets/7ec1d754-9a10-4565-a02a-59d6ad6643c8" />
 
 - From the perspective of the backend server, any single TCP socket carries a stream of bytes (HTTP requests) originating from many distinct sessions.
 - To attribute individual to respective requests, the backend relies on HTTP message boundaries **inferred from (user-controlled) HTTP headers** (`Content-Length` and `Transfer-Encoding`).
@@ -266,8 +259,7 @@ SMUGGLED
 
 - The remaining bytes after the zero chunk — bytes that the front-end included because they fall within the `Content-Length` boundary (`SMUGGLED`) — remain in the connection buffer. These bytes are interpreted as a the **prefix of the next request** arriving on the same connection.
 
-![[hrs_8_CL.TE_SMUGGLED.svg]]
-
+<img width="696" height="972" alt="hrs_8_CL TE_SMUGGLED" src="https://github.com/user-attachments/assets/418f42d4-d065-4f74-946b-1eeda99a7af4" />
 
 - The front-end reads exactly the number of bytes specified by `Content-Length` and forwards them.
 - The back-end sees the `0` chunk, ends the current request, and treats everything after it as the beginning of the next request.
@@ -294,6 +286,7 @@ SMUGGLED
 > ```
 
 >[!note] See [[🛠️ HTTP request smuggling labs#13. HTTP request smuggling, basic CL.TE vulnerability]]
+
 ### Exploiting CL.TE to bypass access controls
 
 - To bypass front-end access controls using CL.TE, send the following payload twice over Repeater:
@@ -312,7 +305,7 @@ Host: localhost
 Foo: x
 ```
 
-![[hrs_9_CL.TE.svg]]
+<img width="699" height="1102" alt="hrs_9_CL TE" src="https://github.com/user-attachments/assets/81d0230d-921d-4562-8dab-a8e4a58ab82b" />
 
 >[!interesting]+ How this works
 >
