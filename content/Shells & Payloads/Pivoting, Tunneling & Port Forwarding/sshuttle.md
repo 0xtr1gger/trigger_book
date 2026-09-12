@@ -1,9 +1,9 @@
 ---
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-09-12
 tags:
   - pivoting
-status: substantial
+  - ssh
 ---
 
 >[!abstract]+ **Scope**: `sshuttle`.

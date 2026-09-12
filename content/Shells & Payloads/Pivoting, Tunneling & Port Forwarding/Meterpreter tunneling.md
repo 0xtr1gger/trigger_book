@@ -248,9 +248,9 @@ run
 
 >[!important] Routes must exist **before** the SOCKS proxy can forward traffic. Add routes first with `autoroute` or `route`.
 
->[!note] Metasploit's SOCKS proxy works similarly to dynamic port forwarding (`ssh -D`) in SSH. See [[🛠️ SSH port forwarding#Dynamic SSH port forwarding]].
+>[!note] Metasploit's SOCKS proxy works similarly to dynamic port forwarding (`ssh -D`) in SSH. See [[SSH port forwarding#Dynamic SSH port forwarding]].
 
->[!note] To learn more about SOCKS, see [[🛠️ SOCKS]].
+>[!note] To learn more about SOCKS, see [[SOCKS]].
 
 - Start the SOCKS proxy from `msfconsole` and run it as a background job:
 
@@ -275,13 +275,13 @@ run -j
 
 ### `proxychains`
 
-![[🛠️ SOCKS#proxychains]]
+![[SOCKS#proxychains]]
 ## Port forwarding (`portfwd`)
 
 - Meterpreter's `portfwd` command creates port forwarding rules that map a local TCP port on your machine to a remote service through the pivot. 
 - Unlike SOCKS proxying, each `portfwd` rule targets a **specific host and port**.
 
->[!note] `portfwd` works similarly to local port forwarding (`ssh -L`) in SSH, but operates through an existing Meterpreter session. See [[🛠️ SSH port forwarding#Local SSH port forwarding]].
+>[!note] `portfwd` works similarly to local port forwarding (`ssh -L`) in SSH, but operates through an existing Meterpreter session. See [[SSH port forwarding#Local SSH port forwarding]].
 
 ### Adding local port forwards
 
@@ -341,7 +341,7 @@ portfwd add -l 8080 -p 80 -r 172.16.5.19
 - Reverse port forwarding opens a listener on the **compromised pivot host**. That listener forwards any incoming connections back to your machine. 
 - You can use this to catch reverse shells from deeper internal targets (those that can reach the pivot, but can't reach your machine directly).
 
->[!note] Reverse port forwards work similarly to remote port forwarding (`ssh -R`) in SSH. See [[🛠️ SSH port forwarding#Remote SSH port forwarding]].
+>[!note] Reverse port forwards work similarly to remote port forwarding (`ssh -R`) in SSH. See [[SSH port forwarding#Remote SSH port forwarding]].
 
 - From the Meterpreter session on the pivot, create a reverse port forward:
 

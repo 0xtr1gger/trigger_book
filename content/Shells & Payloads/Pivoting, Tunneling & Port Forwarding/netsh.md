@@ -1,10 +1,9 @@
 ---
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-09-12
 tags:
   - pivoting
   - living_off_the_land
-status: substantial
 ---
 >[!abstract]+ **Scope**: Using `netsh interface portproxy` to install static, kernel-level TCP port-forwarding rules on Windows.
 ## `netsh`

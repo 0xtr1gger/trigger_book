@@ -85,7 +85,7 @@ chisel client 10.10.11.5:8080 9050:socks
 - Once the tunnel is established, a SOCKS5 proxy listens on your local port `9050`. 
 - Connections to that port are carried through the tunnel to the server. The server decodes the request and opens a corresponding connection to the specified target on its behalf, then carries traffic between your machine and the target.
 
->[!note] To learn more about SOCKS, see [[🛠️ SOCKS]].
+>[!note] To learn more about SOCKS, see [[SOCKS]].
 
 - To route traffic through the SOCKS listener on your side, you can use `proxychains`.
 
@@ -93,7 +93,7 @@ chisel client 10.10.11.5:8080 9050:socks
 proxychains nmap -sV 172.16.5.19
 ```
 
-![[🛠️ SOCKS#`proxychains`]]
+![[SOCKS#`proxychains`]]
 
 ### Forwarding a single port
 
@@ -145,7 +145,7 @@ chisel client 10.10.11.11:8080 R:socks
 proxychains nmap -sV 172.16.5.19
 ```
 
->[!note] See [[🛠️ SOCKS#`proxychains`]].
+>[!note] See [[SOCKS#`proxychains`]].
 
 >[!tip]+
 >- You can override the default SOCKS port (`1080`) using `R:<port>:socks`:

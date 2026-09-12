@@ -1,9 +1,10 @@
 ---
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-09-12
 tags:
   - pivoting
-status: substantial
+  - ssh
+  - living_off_the_land
 ---
 >[!abstract]+ **Scope**: Plink; outbound SSH connections and SSH port forwarding from a Windows host.
 
@@ -103,7 +104,7 @@ B<-..->C["Target<br>172.16.5.19"]
 plink.exe -ssh jdoe@10.10.11.5 -L 8080:172.16.5.19:80
 ```
 
->[!note] See [[🛠️ SSH port forwarding#Local SSH port forwarding]].
+>[!note] See [[SSH port forwarding#Local SSH port forwarding]].
 
 ### Remote port forwarding
 
@@ -113,7 +114,7 @@ plink.exe -ssh jdoe@10.10.11.5 -L 8080:172.16.5.19:80
 plink.exe -ssh jdoe@10.10.11.11 -R 8080:172.16.5.19:80
 ```
 
->[!note] See [[🛠️ SSH port forwarding#Remote SSH port forwarding]].
+>[!note] See [[SSH port forwarding#Remote SSH port forwarding]].
 
 ### Dynamic port forwarding
 
@@ -125,9 +126,9 @@ plink.exe -ssh jdoe@10.10.11.5 -D 9050
 
 - This opens a local SOCKS listener on the Windows host running Plink, on port `9050`.
 
->[!note] See [[🛠️ SSH port forwarding#Dynamic SSH port forwarding]].
+>[!note] See [[SSH port forwarding#Dynamic SSH port forwarding]].
 
->[!note] See [[🛠️ SOCKS]] to learn more about SOCKS proxies.
+>[!note] See [[SOCKS]] to learn more about SOCKS proxies.
 
 >[!tip]+
 > - Confirm that `plink.exe` is running:

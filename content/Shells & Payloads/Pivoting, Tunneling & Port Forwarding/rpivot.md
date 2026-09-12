@@ -1,9 +1,8 @@
 ---
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-09-12
 tags:
   - pivoting
-status: substantial
 ---
 >[!abstract]+ **Scope**: Revese SOCKS4 proxy using `rpivot`.
 ## `rpivot`
@@ -36,7 +35,7 @@ status: substantial
 
 >[!warning] A pure-Python implementation is usually slower than compiled tools.
 
->[!note] See [[🛠️ SOCKS]] to learn more about SOCKS proxies.
+>[!note] See [[SOCKS]] to learn more about SOCKS proxies.
 ## Using `rpivot`
 
 ```mermaid

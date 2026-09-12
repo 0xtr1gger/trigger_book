@@ -1,9 +1,8 @@
 ---
 created: 2026-09-05
-updated: 2026-09-11
+updated: 2026-09-12
 tags:
   - pivoting
-status: substantial
 ---
 >[!abstract]+ **Scope**: `socat`; address types and options; using `socat` for: TCP forwarding, catching a reverse shell through a pivot, relaying a bind shell out through a pivot, building a fully interactive TTY shell, wrapping a relay in TLS.
 ## `socat`
