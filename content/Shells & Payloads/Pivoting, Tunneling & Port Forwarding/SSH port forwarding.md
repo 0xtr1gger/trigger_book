@@ -1,6 +1,6 @@
 ---
 created: 2026-09-05
-updated: 2026-09-12
+updated: 2026-09-13
 tags:
   - pivoting
   - ssh
@@ -323,7 +323,7 @@ ssh -N -R 9050 user@10.10.11.5
 ### `proxychains`
 
 - Not every tool supports SOCKS natively. `proxychains` forces a program's TCP connections through a SOCKS proxy — for example the `-D` listener created above.
-- Configure it with the SSH SOCKS listener (e.g., `socks5 127.0.0.1 9050`), then prefix commands with `proxychains`. See [[SOCKS#proxychains]]
+- Configure it with the SSH SOCKS listener (e.g., `socks5 127.0.0.1 9050`), then prefix commands with `proxychains`. See [[SOCKS#proxychains]].
 
 ## Jump hosts and multi-hop forwarding (`-J`)
 
@@ -422,3 +422,5 @@ grep -E "AllowTcpForwarding|GatewayPorts|PermitTunnel|AllowAgentForwarding|Allow
 - [`ssh — man pages`](https://man.archlinux.org/man/ssh.1.en)
 - [`ssh_config — man pages`](https://man.archlinux.org/man/ssh_config.5.en)
 
+- TODO:
+	- More on `-J`
