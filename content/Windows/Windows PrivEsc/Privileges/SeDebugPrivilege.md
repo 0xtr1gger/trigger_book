@@ -1,9 +1,9 @@
 ---
 created: 2026-02-10
+updated: 2026-09-18
 tags:
   - Windows
   - Windows_PrivEsc
-updated: 2026-09-15
 status: complete
 ---
 
@@ -72,10 +72,13 @@ privilege::debug
 - Access to the LSASS process is normally restricted by its security descriptor; unprivileged users can't open it with access rights sufficient to read its memory.
 - `SeDebugPrivilege` allows a process to bypass the normal discretionary access checks. With this privilege, you can open a handle to `lsass.exe`, read its memory, and **extract credentials stored there**.
 
->[!note] See [[🛠️ Dumping LSASS memory]].
+>[!note] See [[Dumping LSASS memory]].
 
->[!note] On modern Windows systems, **LSA Protection** can run LSASS as a **PPL (Protected Process Light)**. This prevents ordinary user-mode processes from obtaining the access required to read its memory, even when `SeDebugPrivilege` is enabled.
->- See [`Configure added LSA protection — Microsoft Learn`](https://learn.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection).
+>[!note]+ PPL and Credential Guard
+>![[Dumping LSASS memory#LSA Protection (PPL)]]
+>---
+>![[Dumping LSASS memory#Credential Guard]]
+
 ## Impersonating tokens
 
 - `SeDebugPrivilege` allows the caller to open a handle to a higher-privileged process (e.g., `winlogon.exe` or `lsass.exe`), bypassing normal discretionary access checks. The caller can then use `OpenProcessToken()` to *obtain a handle to the process's primary token*.
