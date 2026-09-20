@@ -1,6 +1,6 @@
 ---
 created: 2026-02-10
-updated: 2026-09-18
+updated: 2026-09-20
 tags:
   - Windows
   - Windows_PrivEsc
