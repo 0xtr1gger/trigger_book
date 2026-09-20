@@ -133,7 +133,7 @@ Get-Content -Path "C:\Path\To\file.txt"
 
 - `SeTakeOwnershipPrivilege` can be used to take ownership of service executables, including those running as `SYSTEM`. You can find a privileged service, take ownership of its executable, rewrite its DACL, and either replace it or modify to gain code execution as `SYSTEM`.
 
-> [!note] A similar issue occurs when a privileged service executable (or its parent directory) is misconfigured to allow write access; see [[🛠️ Weak service permissions]].
+> [!note] A similar issue occurs when a privileged service executable (or its parent directory) is misconfigured to allow write access; see [[Weak service DACLs]].
 
 1. Identify services running as `SYSTEM` and inspect their executable paths:
 

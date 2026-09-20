@@ -24,7 +24,7 @@ status: complete
 - Windows also assigns **`SeBackupPrivilege`** and **`SeRestorePrivilege`** to members of `Server Operators` by default, granting file read and write access under backup semantics.
 - Reconfiguring a service's binary path (`binPath`) to execute a custom command executes that command under `NT AUTHORITY\SYSTEM` when the service starts.
 
-> [!note] See [[SeBackupPrivilege & SeRestorePrivilege]] for privilege escalation via backup semantics, and [[🛠️ Weak service permissions]] for general service configuration abuse.
+> [!note] See [[SeBackupPrivilege & SeRestorePrivilege]] for privilege escalation via backup semantics, and [[Weak service DACLs]] for general service configuration abuse.
 
 ## Checking group membership
 
