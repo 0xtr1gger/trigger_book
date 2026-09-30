@@ -1,9 +1,10 @@
 ---
 created: 2026-07-17
+updated: 2026-09-30
 tags:
-  - recon
   - web_hacking
 status: incomplete
+proofread: yes
 ---
 ## Visual recon
 
@@ -17,34 +18,37 @@ status: incomplete
 		- This approach is far faster and more intuitive than dealing with piles of textual data.
 	
 	- Filter out error or empty pages
-		- Even if an endpoint appears to be alive, and the response is `200`, you can't now for sure what's there until you inspect the HTML or render the page. Web applications may implement custom error pages.
+		- Even if an endpoint appears to be alive and the response is `200`, you can't know for sure what's there until you inspect the HTML or render the page. Web applications may implement custom error pages.
 	
 	- Recognize technology stacks
-		- It might be much more easy to fingerprint the technology stack of a target application using visual cues. You just know how WordPress, Tomcat, Jenkins, Grafana *look like*. It's more convenient for a human brain to work with pictures and colors rather than tags and attributes.
+		- It is often much easier to fingerprint the technology stack of a target application using visual cues. You just know what WordPress, Tomcat, Jenkins, and Grafana *look like*. It's more convenient for the human brain to work with pictures and colors than with tags and attributes.
 
 - Most commonly used tools for automated visual recon:
-	- [`EyeWitness`](https://github.com/RedSiege/EyeWitness) — Uses Selenium WebDriver to control a headless browser. Generates categorized HTML reports.
+- [`EyeWitness`](https://github.com/RedSiege/EyeWitness) — Uses Selenium WebDriver to control a headless browser. Generates categorized HTML reports.
 
-	```bash
-	eyewitness --web -f urls.txt -d example.com
-	```
+```bash
+eyewitness --web -f urls.txt -d example.com
+```
 
-	- [`Aquatone`](https://github.com/michenriksen/aquatone) — Written in Go, uses headless Chrome/Chromium.
-
-	
-	```bash
-	cat subdomains.txt | aquatone -out ./aquatone_report
-	```
+- [`Aquatone`](https://github.com/michenriksen/aquatone) — Written in Go, uses headless Chrome/Chromium.
 
 
-	- [`httpx`](https://github.com/projectdiscovery/httpx) — Among another things, can take screenshots using a local headless browser.
+```bash
+cat subdomains.txt | aquatone -out ./aquatone_report
+```
 
-	```bash
-	httpx -l interesting.txt -ss -system-chrome -o screenshots/
-	```
 
-	- [`gowitness`](https://github.com/sensepost/gowitness) —
+- [`httpx`](https://github.com/projectdiscovery/httpx) — Among other things, can take screenshots using a local headless browser.
 
+```bash
+httpx -l interesting.txt -ss -system-chrome -o screenshots/
+```
+
+- [`gowitness`](https://github.com/sensepost/gowitness) — Written in Go, drives headless Chrome/Chromium and stores screenshots and metadata in a SQLite database, browsable through a built-in web report.
+
+```bash
+gowitness scan file -f urls.txt
+```
 
 >[!interesting]+ Headless browsers
 > These tools use a **headless browser** to simulate a user opening a URL.
@@ -52,13 +56,13 @@ status: incomplete
 >>A **[headless browser](https://en.wikipedia.org/wiki/Headless_browser)** is a web browser without a GUI (Graphical User Interface).
 > 
 > A headless browser can execute JavaScript, parse CSS, render DOM, handle client-side redirects, just like a regular browser. The tool then captures a screenshot of the rendered page and saves it along with metadata like page title, HTTP response headers, cookies, etc.
-## EyeWitness
+## `EyeWitness`
 
->[EyeWitness](https://github.com/RedSiege/EyeWitness), written in Python, uses the Selenium WebDriver API to control a headless browser, Chrome or Chromium. It takes a list of URLs or hosts, navigates to each, and captures screenshots and metadata.
+>**[`EyeWitness`](https://github.com/RedSiege/EyeWitness)**, written in Python, uses the Selenium WebDriver API to control a headless browser (Chrome or Chromium). It takes a list of URLs or hosts, navigates to each, and captures screenshots and metadata.
 
 - Key features:
 	- Works on Windows, Linux, and macOS.
-	- Automatically adjusts resource consumption based to system capabilities.
+	- Automatically adjusts resource consumption based on system capabilities.
 	- Support for configuration files.
 	- Pre-flight URL validation checks.
 	- Progress tracking with ETA (Estimated Time of Arrival).
@@ -79,10 +83,29 @@ status: incomplete
 >```
 >
 
+>[!note]+ Virtual environments
+> - To use, first activate a virtual environment:
+> 
+> ```bash
+> source eyewitness-venv/bin/activate
+> ```
+> 
+> - When finished, deactivate it:
+> 
+> ```bash
+> deactivate
+> ```
+
 - Scan a list of URLs and save results into the `example.com_eyewitness` directory:
 
 ```bash
 eyewitness --web -f urls.txt -d example.com_eyewitness
+```
+
+- Scan a list of hosts, prepending both schemes, and save results into the `example.com_eyewitness` directory:
+
+```bash
+eyewitness --web -f hosts.txt --prepend-https -d example.com_eyewitness
 ```
 
 - Take screenshots of targets specified in an Nmap XML file:
@@ -142,7 +165,7 @@ eyewitness --web -x web_discovery.xml -d example.com_eyewitness
 | `--max-retries` | Maximum retries on timeouts.                                                     |
 ## Aquatone
 
->**[Aquatone](https://github.com/michenriksen/aquatone)** is written in Go and uses Google Chrome or Chromium headless browser to capture screenshots and metadata from the target URLs.
+>**[Aquatone](https://github.com/michenriksen/aquatone)** is written in Go and uses a headless Google Chrome or Chromium browser to capture screenshots and metadata from the target URLs.
 
 >[!note]- Installation
 > ```bash
@@ -150,29 +173,37 @@ eyewitness --web -x web_discovery.xml -d example.com_eyewitness
 > unzip aquatone_linux_amd64_1.7.0.zip
 > ```
 
-- Scan a list of URLs and save results into the `example.com` directory:
+- Read a list of URLs from `subs.txt` and capture screenshots:
 
 ```bash
-cat subs.txt | aquatone
+cat subdomains.txt | aquatone
 ```
-
 
 | Option                | Description                                                                                                  | Default                         |
 | --------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------- |
 | `-chrome-path`        | Full path to the Chrome/Chromium executable to use. By default, aquatone will search for Chrome or Chromium. | N/A                             |
 | `-debug`              | Print debugging information.                                                                                 | `false`                         |
-| `-http-timeout`       | Timeout in miliseconds for HTTP requests.                                                                    | `3000`                          |
+| `-http-timeout`       | Timeout in milliseconds for HTTP requests.                                                                   | `3000`                          |
 | `-nmap`               | Parse input as Nmap/Masscan XML.                                                                             | `false`                         |
 | `-out`                | Directory to write files to.                                                                                 | `.`                             |
 | `-ports`              | Ports to scan on hosts. Supported list aliases: small, medium, large, xlarge.                                | `80`,`443`,`8000`,`8080`,`8443` |
 | `-proxy`              | Proxy to use for HTTP requests.                                                                              | N/A                             |
 | `-resolution`         | Screenshot resolution.                                                                                       | `1440`,`900`                    |
 | `-save-body`          | Save response bodies to files.                                                                               | `true`                          |
-| `-scan-timeout`       | Timeout in miliseconds for port scans.                                                                       | `100`                           |
-| `-screenshot-timeout` | Timeout in miliseconds for screenshots.                                                                      | `30000`                         |
+| `-scan-timeout`       | Timeout in milliseconds for port scans.                                                                      | `100`                           |
+| `-screenshot-timeout` | Timeout in milliseconds for screenshots.                                                                     | `30000`                         |
 | `-session`            | Load Aquatone session file and generate HTML report.                                                         | N/A                             |
 | `-silent`             | Suppress all output except for errors.                                                                       | `false`                         |
 | `-template-path`      | Path to HTML template to use for report.                                                                     | N/A                             |
 | `-threads`            | Number of concurrent threads.                                                                                | Number of logical CPUs.         |
 | `-version`            | Print current Aquatone version.                                                                              |                                 |
 
+## Interpreting the results
+
+- Note interesting hosts, including the URL and application name/version if possible. 
+- Pay special attention to:
+	- Known commonly vulnerable applications
+	- Login panels
+	- Interesting functionality such as file uploads
+
+>[!warning] Remember this is still the information gathering stage. Do not attack hosts right away — you can end up down a rabbit hole and miss something important in the report.

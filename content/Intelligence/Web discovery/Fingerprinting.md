@@ -1,9 +1,11 @@
 ---
 created: 2026-07-18
+updated: 2026-09-29
 tags:
-  - recon
+  - intel
   - web_hacking
-status: substantial
+status: complete
+proofread: yes
 ---
 ## Fingerprinting
 
@@ -21,19 +23,19 @@ status: substantial
 > 	- Accurately point to the root source of vulnerabilities in reports. 
 ### Fingerprinting objectives 
 
-- **Web server software and version** (Apache, Nginx, IIS).
-- **Backend programming language** (PHP, Python, Java, Ruby, Node.js, .NET, Go).
-- **Web framework and libraries** (Django, Laravel, Spring, Express, Rails, Struts).
-- **Content Management System (CMS)** (WordPress, Joomla, Drupal, Magento).
-- **APIs** (REST, GraphQL, SOAP, gRPC).
-- **Database Management System (DBMS)** (MySQL, PostgreSQL, MSSQL, Oracle, MongoDB).
-- **Caching layer** (Varnish, Redis, Memcached).
-- **Reverse proxies and load-balancers** (HAProxy, Nginx, F5 BIG-IP, Envoy).
-- **CDNs** (Cloudflare, Akamai, AWS CloudFront, Fastly).
-- **WAFs** (Cloudflare WAF, AWS WAF, Imperva, ModSecurity).
-- **TLS/SSL configuration**: protocol versions, cipher suites, and certificate metadata.
-- **Third-party integrations**: **OAuth and SSO providers** (Google, Okta, Auth0), **Payment services** (Stripe, PayPal, Square), **Analytics** (Google Analytics, Segment).
-- **Operating System** (Windows, Linux + kernel version, FreeBSD).
+- [ ] **Web server software and version** (Apache, Nginx, IIS).
+- [ ] **Backend programming language** (PHP, Python, Java, Ruby, Node.js, .NET, Go).
+- [ ] **Web framework and libraries** (Django, Laravel, Spring, Express, Rails, Struts).
+- [ ] **Content Management System (CMS)** (WordPress, Joomla, Drupal, Magento).
+- [ ] **APIs** (REST, GraphQL, SOAP, gRPC).
+- [ ] **Database Management System (DBMS)** (MySQL, PostgreSQL, MSSQL, Oracle, MongoDB).
+- [ ] **Caching layer** (Varnish, Redis, Memcached).
+- [ ] **Reverse proxies and load-balancers** (HAProxy, Nginx, F5 BIG-IP, Envoy).
+- [ ] **CDNs** (Cloudflare, Akamai, AWS CloudFront, Fastly).
+- [ ] **WAFs** (Cloudflare WAF, AWS WAF, Imperva, ModSecurity).
+- [ ] **TLS/SSL configuration**: protocol versions, cipher suites, and certificate metadata.
+- [ ] **Third-party integrations**: **OAuth and SSO providers** (Google, Okta, Auth0), **Payment services** (Stripe, PayPal, Square), **Analytics** (Google Analytics, Segment).
+- [ ] **Operating System** (Windows, Linux + kernel version, FreeBSD).
 ## Automated tools
 
 - Automated tools are the fastest way to get a baseline understanding of the target's stack.
@@ -156,7 +158,7 @@ whatweb --cookiejar cookies.txt example.com
 ```
 #### Plugins
 
-- `WhatWeb` has over 1800 plugins, each used to detect something different.
+- `WhatWeb` has over 1800 plugins, each detecting something different.
 - List all plugins:
 
 ```bash
@@ -307,11 +309,11 @@ httpx -l hosts.txt -jarm -favicon -json | jq -r '.[] | "\(.jarm) \(.favicon) \(.
 httpx -l live.txt -td -cff custom_fingerprints.yaml -title -server -json -o tech.json
 ```
 
->[!note] For more about HTTPX, see [[Mapping the attack surface#HTTPX]].
+>[!note] For more about HTTPX, see [[🛠️ Host and service discovery#HTTPX]].
 
 ## Detecting WAFs
 
-> [`wafw00f`](https://github.com/EnableSecurity/wafw00f) is a command-line tool specifically designed for identifying WAFs protecting target applications.
+> [`wafw00f`](https://github.com/EnableSecurity/wafw00f) is a command-line tool for identifying the WAFs that protect a target application.
 
 >[!note]+ Installation
 >```bash
@@ -328,7 +330,7 @@ wafw00f -l
 
 >[!interesting]+ How `wafw00f` works
 > - `wafw00f` uses a progressively aggressive methodology:
-> 	1. Sends a normal HTTP `GET` request and analysis response headers, cookies, and behavioral patterns that can reveal WAF signatures.
+> 	1. Sends a normal HTTP `GET` request and analyzes response headers, cookies, and behavioral patterns that can reveal WAF signatures.
 > 	2. If unsuccessful, sends a series of potentially malicious or malformed HTTP requests designed to trigger WAF-specific error messages, blocking behavior, or any distinctive response patterns.
 > 	3. If this fails, it uses heuristic algorithms to analyze response timing and any anomalous behavior that indicates the presence of a WAF.
 
@@ -359,7 +361,7 @@ wafw00f https://example.com/admin/login.php
 >[!tip] Different URL paths may be protected differently; test multiple endpoints (login pages, API endpoints, admin panels). The same goes for different HTTP methods.
 
 >[!tip]
->There is an amazing GitHub repository, [`Awesome-WAF`](https://github.com/0xInfection/Awesome-WAF) that contains a wealth of useful information about web application firewalls. Once a firewall is identified, it is a good place to start searching for known bypasses. 
+>- [`Awesome-WAF`](https://github.com/0xInfection/Awesome-WAF) is a GitHub repository with extensive information about web application firewalls. Once a firewall is identified, it's a good place to start looking for known bypasses.
 
 >[!note] To read more about WAFs, see [`WAF through the eyes of hackers — barracud4, Habr`](https://habr.com/en/companies/dsec/articles/454592/).
 
@@ -371,35 +373,35 @@ wafw00f https://example.com/admin/login.php
 - Enable service/version detection:
 
 ```bash
-nmap -sV <target>
+nmap -sV 10.10.11.5
 ```
 
-- Ensure every single probe is attempted (Intensive, slower):
+- Ensure every single probe is attempted (intensive, slower):
 
 ```bash
-nmap -sV --version-all <target>
+nmap -sV --version-all 10.10.11.5
 ```
 
 - Don't exclude any ports from version detection:
 
 ```bash
-nmap -sV --allports <target>
+nmap -sV --allports 10.10.11.5
 ```
 
 >[!note] See [[Nmap version detection]].
-### Nmap OS Detection
+### Nmap OS detection
 
 - Nmap uses **TCP/IP stack fingerprinting** for remote OS detection. It sends a series of specific TCP and UDP packets (e.g., TCP ISN sampling, initial window size checks) and compares the responses against its internal `nmap-os-db`.
 - Enable OS detection:
 
 ```bash
-nmap -O <target>
+nmap -O 10.10.11.5
 ```
 
 - Aggressive scan (OS, version detection, scripts, traceroute):
 
 ```bash
-nmap -A <target>
+nmap -A 10.10.11.5
 ```
 
 > [!important] For reliable OS detection, Nmap needs to find at least **one open** and **one closed** port on the target. Take OS versions with a grain of salt if virtualization or load balancers are in place.
@@ -410,7 +412,7 @@ nmap -A <target>
 
 ### Banner grabbing
 
->**Banner grabbing** is a technique used to collect information about network services running on the target by capturing **software banners** — usually textual information sent by services upon connection.
+>**Banner grabbing** is a technique for collecting information about network services running on the target by capturing **software banners** — usually textual information sent by a service upon connection.
 
 - Fetch headers only:
 
@@ -425,6 +427,8 @@ curl --head https://example.com
 ```bash
 curl -X HEAD https://example.com
 ```
+
+>[!note] Prefer `-I`/`--head` over `-X HEAD`. With `-X HEAD`, `curl` sends a `HEAD` request but still waits for a response body (based on `Content-Length`), so the command may hang until it times out.
 
 | Option         | Description                 |
 | -------------- | --------------------------- |
@@ -447,21 +451,20 @@ Host: example.com
 nmap -sV --script=banner -p 80,443 example.com
 ```
 
-Pay special attention to:
-
-- **Server Headers**: Directly reveal web server name and/or version (`Server: Apache/2.4.41`).
-- **Non-Standard/Custom Headers**: Often disclose backend frameworks or languages.
-	- `X-Powered-By: Express`
-	- `X-Powered-By: PHP/7.4.3`
-	- `X-AspNet-Version: 4.0.30319`
-- **Vendor-Specific Headers**: Reveal CDNs, Proxies, or WAFs.
-	- [`Cf-Ray`](https://developers.cloudflare.com/fundamentals/reference/http-headers/#cf-ray), [`Cf-Worker`](https://developers.cloudflare.com/fundamentals/reference/http-headers/#cf-worker) (Cloudflare)
-	- `X-Amz-Cf-Id` (AWS CloudFront)
-- **Header Order**: While less common today, the specific ordering of HTTP headers can sometimes distinguish between Apache, Nginx, or Lighttpd.
+>[!tip]+
+> - **Server Headers**: Directly reveal web server name and/or version (`Server: Apache/2.4.41`).
+> - **Non-Standard/Custom Headers**: Often disclose backend frameworks or languages.
+> 	- `X-Powered-By: Express`
+> 	- `X-Powered-By: PHP/7.4.3`
+> 	- `X-AspNet-Version: 4.0.30319`
+> - **Vendor-Specific Headers**: Reveal CDNs, proxies, or WAFs.
+> 	- [`Cf-Ray`](https://developers.cloudflare.com/fundamentals/reference/http-headers/#cf-ray), [`Cf-Worker`](https://developers.cloudflare.com/fundamentals/reference/http-headers/#cf-worker) (Cloudflare)
+> 	- `X-Amz-Cf-Id` (AWS CloudFront)
+> - **Header Order**: While less common today, the specific ordering of HTTP headers can sometimes distinguish between Apache, Nginx, and Lighttpd.
 
 >[!note]- Even the order of HTTP headers may be revealing
 > 
-> Sometimes you can make an educated guess on what web server or proxy is in use based on the order of HTTP headers in responses. But it becomes less and less common, since responses are slowly becoming pretty standardized. 
+> Sometimes you can make an educated guess on what web server or proxy is in use based on the order of HTTP headers in responses. However, this is becoming less common, as responses are increasingly standardized. 
 > 
 > | Apache                                                                                                                   | Nginx                                                                                                                    | lighttpd                                                                                                                 |
 | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
@@ -474,11 +477,9 @@ Pay special attention to:
 	- `ASP.NET_SessionId` -> .NET
 	- `wordpress_logged_in_*` -> WordPress
 	- `rack.session` -> Ruby on Rails
+### Source code analysis (HTML, JS, CSS)
 
-### Source Code Analysis (HTML, JS, CSS)
-
-Analyzing static content often reveals what the application is built on.
-
+- Analyzing static content often reveals what the application is built on.
 - **HTML meta tags & comments**:
 
 ```html
@@ -487,11 +488,11 @@ Analyzing static content often reveals what the application is built on.
 <!-- Powered by Laravel Framework -->
 ```
 
-- **JavaScript Analysis**:
+- **JavaScript analysis**:
     - Look for framework-specific variables: `ng-app` (Angular), JSX syntax (React), `v-` directives (Vue).
     - API endpoints: AJAX calls can reveal backend structure (`/api/users/?format=json` indicates Django REST framework).
     - Use tools like [`LinkFinder`](https://github.com/GerbenJavado/LinkFinder) or [`SecretFinder`](https://github.com/m4ll0k/SecretFinder) to parse JS files for hidden endpoints.
-- **CSS Files**: Comments or specific class naming conventions (e.g., `tailwind`, `bootstrap`).
+- **CSS files**: Comments or specific class naming conventions (e.g., `tailwind`, `bootstrap`).
 
 ### File and directory naming conventions
 
@@ -592,7 +593,7 @@ package.json
 	- Request non-existent resources (will likely result in `4xx` errors).
 	- Alter request parameters (`GET` parameters in query strings, `POST` parameters in request body, etc.).
 	- Manipulate HTTP headers.
-	- Add unexpected characters, such as `[`, `[[`, `]]`, etc. in headers, cookie names, and parameters to disrupt the code that handles these values:
+	- Add unexpected characters such as `[`, `[[`, or `]]` in headers, cookie names, and parameters to disrupt the code that handles these values:
 
 ```bash
 # array notation in unexpected places
@@ -603,10 +604,10 @@ curl "https://example.com/page?param[test][nested]=value"
 curl -H "Cookie: session=abc123[[]]xyz" https://example.com
 ```
 
-- Use arbitrary HTTP verbs
+- Try other HTTP verbs:
 
 ```bash
-# standard bur often restricted methods
+# standard but often restricted methods
 curl -X PUT https://example.com 
 curl -X DELETE https://example.com/resource 
 curl -X PATCH https://example.com/resource 
@@ -625,8 +626,7 @@ curl -X "" https://example.com
 curl -X " " https://example.com
 ```
 
-- Exceed server limits
-	- Send requests that exceed server limits, such as payload size.
+- Exceed server limits, such as payload size:
 
 ```bash
 # large payload
@@ -639,9 +639,9 @@ for i in {1..1000}; do curl https://example.com & done
 curl "https://example.com/?param=$(python3 -c 'print("A"*10000)')"
 ```
 
-What to look for in error messages:
+- What to look for in error messages:
 
-- Stack traces
+- Stack traces:
 
 ```bash
 Traceback (most recent call last):
@@ -650,7 +650,7 @@ Traceback (most recent call last):
 django.core.exceptions.ObjectDoesNotExist: User matching query does not exist.
 ```
 
-- Framework-specific errors
+- Framework-specific errors:
 
 ```bash
 # Laravel (PHP)
