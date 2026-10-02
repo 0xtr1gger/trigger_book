@@ -1,6 +1,6 @@
 ---
 created: 2026-09-27
-updated: 2026-09-30
+updated: 2026-10-02
 tags:
   - intel
   - methodology
@@ -100,7 +100,7 @@ ffuf -w /usr/share/wordlists/seclists/Discovery/Web-Content/common.txt -u https:
 
 >[!note] See [[Fuzzing parameters]].
 
-- Discover hidden parameters — query, body, header, and cookie — that the application accepts but does not expose in the UI:
+- Discover hidden parameters — URL query parameters, HTTP body parameters, headers, cookies — that the application accepts but does not expose in the UI:
 
 ```bash
 ffuf -u "https://example.com/page?FUZZ=x" -w /usr/share/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt -ac -c
@@ -111,6 +111,6 @@ arjun -u https://example.com/api
 ```
 ## Where to go next
 
-- If a known off-the-shelf application or CMS is discovered, it likely has a well-documented attack surface -> See [[🛠️ Web application security testing methodology#Attacking common applications]].
+- If a known off-the-shelf application or CMS is discovered, it likely has a well-documented attack surface -> See [[Web application security testing methodology#Attacking common applications]].
 - APIs often expose an additional, separate attack surface -> See [[API testing]] and [[GraphQL attacks]].
-- With the attack surface mapped, probe each entry point for vulnerabilities -> See [[🛠️ Web application security testing methodology#Searching for web vulnerabilities]].
+- With the attack surface mapped, probe each entry point for vulnerabilities -> See [[Web application security testing methodology#Searching for web vulnerabilities]].
