@@ -5,6 +5,7 @@ tags:
   - client-side
   - cheatsheet
 status: draft
+updated: 2026-09-20
 ---
 - https://portswigger.net/support/bypassing-signature-based-xss-filters-modifying-script-code
 

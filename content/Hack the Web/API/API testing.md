@@ -4,6 +4,7 @@ tags:
   - api_testing
   - web_hacking
 status: incomplete
+updated: 2026-09-20
 ---
 
 >[!info] **API (Application Programming Interface)** is a set of rules, protocols, and definitions that allows different software components to communicate, exchange data, and request services from one another. It acts as a **defined contract** or interface that specifies how requests must be formatted, what information is exchanged, and how responses are returned.

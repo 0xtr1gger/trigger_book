@@ -5,6 +5,7 @@ tags:
   - web_hacking
   - SQL
 status: substantial
+updated: 2026-10-03
 ---
 
 ## Introduction: the concept of SQL injection

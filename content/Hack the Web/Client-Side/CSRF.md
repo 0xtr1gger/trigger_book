@@ -4,6 +4,7 @@ tags:
   - web_hacking
   - client-side
 status: substantial
+updated: 2026-09-20
 ---
 ## CSRF
 

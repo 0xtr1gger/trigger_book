@@ -4,6 +4,7 @@ tags:
   - web_hacking
   - authentication
 status: incomplete
+updated: 2026-09-20
 ---
 ## OAuth vulnerabilities
 

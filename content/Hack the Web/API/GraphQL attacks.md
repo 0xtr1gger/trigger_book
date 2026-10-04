@@ -4,6 +4,7 @@ tags:
   - web_hacking
   - api_testing
 status: substantial
+updated: 2026-09-20
 ---
 ## GraphQL
 

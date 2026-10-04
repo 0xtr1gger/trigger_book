@@ -3,6 +3,7 @@ created: 2026-05-18
 tags:
   - web_hacking
 status: draft
+updated: 2026-09-20
 ---
 ## Serialization and deserialization
 

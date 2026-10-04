@@ -3,6 +3,7 @@ created: 2026-05-07
 tags:
   - web_hacking
 status: incomplete
+updated: 2026-09-20
 ---
 ## NoSQL injection
 

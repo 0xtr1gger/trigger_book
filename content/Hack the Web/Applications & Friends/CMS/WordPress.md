@@ -4,6 +4,7 @@ tags:
   - web_hacking
   - CMS
 status: substantial
+updated: 2026-09-30
 ---
 
 ## WordPress
@@ -410,7 +411,7 @@ curl -s https://example.com | grep -oP "https?://[^\"' ]+/wp-(?:includes|admin)/
 >- `[^\"'?]+` -> matches any sequence of characters until a quote or question mark appears (captures the file path and filename, without query string).
 >- `\?ver=[^\"' ]+"` -> matches `?ver=` query parameter (`?` escaped) and any sequence of characters until a quote or space appears (captures version values, including versions with tags).
 
-#### wp-json
+#### `wp-json`
 
 - `/wp-json` is the root endpoint for the WordPress REST API. 
 - It dumps a JSON document that describes all available routes, site name, an description of the WordPress site — and may expose the core WordPress version.
@@ -843,8 +844,7 @@ https://example.com/comments/feed/
 
 ### Login page error message enumeration
 
-
-WordPress's default login error messages differ based on whether the username exists:
+- WordPress's default login error messages differ based on whether the username exists:
 
 | Error message                                                       | Scenario                                    |
 | ------------------------------------------------------------------- | ------------------------------------------- |
@@ -1011,13 +1011,13 @@ curl -s -X POST https://target.com/xmlrpc.php \
 wpscan --url https://example.com \
        --password-attack xmlrpc-multicall \
        -U admin \
-       -P /usr/share/seclists/Passwords/Leaked-Databases/rockyou.txt \
+       -P /usr/share/wordlists/rockyou.txt \
        -t 20
 ```
 
 - The multicall method was the original reason XML-RPC became such a liability. WordPress versions before 4.4 have no internal limit on the number of calls per multicall batch — you can send 500 login attempts in a single request.
 
-### pingback.ping as SSRF
+### `pingback.ping` as SSRF
 
 - The `pingback.ping` method accepts a source URL and a target URL and makes a server-side HTTP request to the source. A classic SSRF vector:
 
@@ -1033,8 +1033,6 @@ curl -s -X POST https://target.com/xmlrpc.php \
   </params>
 </methodCall>'
 ```
-
-
 
 ## WPScan 
 

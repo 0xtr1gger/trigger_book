@@ -3,6 +3,7 @@ created: 2026-05-01
 tags:
   - web_hacking
   - Windows_credential_dumping
+updated: 2026-09-20
 ---
 
 - Bypass of OTP (one-time password).

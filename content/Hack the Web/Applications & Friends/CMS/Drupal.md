@@ -4,6 +4,7 @@ tags:
   - web_hacking
   - CMS
 status: stub
+updated: 2026-09-20
 ---
 ## Drupal
 

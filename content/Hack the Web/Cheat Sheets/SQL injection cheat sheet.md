@@ -6,6 +6,7 @@ tags:
   - web_hacking
   - SQL
 status: substantial
+updated: 2026-09-20
 ---
 ## Basic detection and commenting out
 

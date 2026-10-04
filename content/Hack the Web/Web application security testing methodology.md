@@ -1,6 +1,6 @@
 ---
 created: 2026-09-26
-updated: 2026-10-02
+updated: 2026-10-04
 tags:
   - methodology
   - web_hacking
@@ -11,11 +11,9 @@ proofread: no
 
 ## Web application security testing methodology
 
->[!abstract]+ **Scope**: a roadmap and checklist for testing a web application end to end. Categories follow the [`OWASP Web Security Testing Guide (WSTG)`](https://owasp.org/www-project-web-security-testing-guide/), and every check links to the vault note that covers the respective technique in depth.
-
 >[!note]+ Each entry consists of:
 >- **Cue** — an observable signal or behavior that hints at a weakness.
->- **Check & why** — what to probe once the cue appears, and what a positive result proves.
+>- **Check** — what to probe once the cue appears, and what a positive result proves.
 >- **→ Reference** — the note that covers the technique in depth.
 
 >[!note] Work through the categories as a checklist, not a strict sequence.
@@ -41,18 +39,33 @@ proofread: no
 ### Known vulnerabilities in the stack
 
 - **An identified server, framework, language, or library version**
-	- Once you fingerprint the technology stack, search public advisories and exploit databases for known vulnerabilities affecting those exact versions. 
+	- Search public advisories and exploit databases for known vulnerabilities affecting the exact versions. 
 	- → [[Fingerprinting]], [[🛠️ Searching for known vulnerabilities]].
-
-### Platform and server configuration
+### Platform and server (mis)configuration
 
 - **`Server`, `X-Powered-By`, `X-AspNet-Version` response headers**
-	- Read the response headers to identify the web server, framework, and language. 
+	- Read the headers to identify the web server, framework, and language. 
 	- → [[Fingerprinting]].
+
 - **Default framework/sample pages left in production**
-	- Default Django/Rails/Laravel welcome pages, Spring Boot whitelabel error pages, `create-react-app`/`Next.js`/`Vite` landing pages, or an unmodified starter `index.html` may expose the exact framework version or other important details.
-	- Sample/test scripts and information pages such as `phpinfo.php`, `test.php`, `info.php`, and default CMS install scripts (`wp-admin/install.php`, Joomla `installation/`) may expose sensitive information and secrets. 
+	- Default framework pages (welcome pages in Django, Laravel, Rails), unmodified starter `index.html`, sample/test scripts (`phpinfo.php`, `test.php`), CMS installation scripts (`wp-admin/install.php`) often expose the exact framework version and other details, sometimes secrets. 
+	- -> [[🛠️ Sensitive information disclosure]].
+
+- **Framework debug consoles**
+	- Django `DEBUG=True` error pages, the Werkzeug debugger (`/console`), Rails development-mode errors — may leak fragments of application source code and configuration, and sometimes be abused for code execution.
+	- -> [[🛠️ Sensitive information disclosure]].
+
+- **Auto-generated API documentation reachable in production**
+	- // rephrase
+	- Swagger UI/Open API documentation (`/swagger-ui`, `/swagger.json`, `/v2/api-docs`), GraphQL Playground/GraphiQL, or gRPC reflection expose the full API schema, including admin-only operations; some execute requests directly.
+	- -> [[API testing]].
+
+- **Directory listings**
+	- Automatically generated directory and file listing pages may expose source code, configuration, and hidden endpoints.
 	- → [[🛠️ Sensitive information disclosure]].
+
+- **Verbose errors**
+	- Verbose errors and stack traces caused by 
 
 - **Auto-generated API documentation reachable in production**
 	- Swagger UI/OpenAPI (`/swagger-ui`, `/swagger.json`, `/v2/api-docs`), GraphQL Playground/GraphiQL, or gRPC reflection often expose the full schema, including undocumented or admin-only operations, and some run requests directly without extra authorization. 
@@ -61,74 +74,80 @@ proofread: no
 - **Directory listing enabled**
 	- An auto-index page may expose source, backups, and config you were never meant to browse. 
 	- → [[🛠️ Sensitive information disclosure]].
-
 ### Admin and management interfaces
 
 - **Reachable admin panels and management consoles**
-	- `/admin`, `/manager/html` (Tomcat), `/console`, database admins (`/phpmyadmin`, `/adminer`), and CI or monitoring dashboards.
-	- Brute-force the paths, then test default credentials and access control. 
+	- `/admin`, `/manager/html` (Tomcat), `/console`, database admins (`/phpmyadmin`, `/adminer`), CI and monitoring dashboards; try default credentials, test for credential brute-force attacks, attempt to bypass access controls.
 	- → [[Directory and file enumeration]].
-
-### File extensions and backup files
+### Sensitive and backup files
 
 - **Backup, temporary, and unreferenced files**
-	- Request predictable variants: `index.php.bak`, `config.php~`, `.old`, `.zip`, `.tar.gz`, swap files, and editor temporaries. A recovered backup leaks source and secrets. 
-	- → [[🛠️ Sensitive information disclosure]].
-- **File extensions that change handling**
-	- Rename or request a file with a different extension (`.inc`, `.txt`, `.src`, `.phps`) to make the server return source instead of executing it.
-	- → [[🛠️ Configuration and deployment management testing]].
+	- // paraphrase
+	- Backup or temporary editor flies (`index.php.bak`, `config.php~`, `.old`, `.zip`, `.tar.gz`), environment and configuration files (`.env`, `application.yml`, `web.config`, `composer.json`, `package.json`) may leak source code, configuration, credentials, and secret keys. 
+	- -> [[🛠️ Sensitive information disclosure]].
 
+- **Alternative file extensions**
+	- Request a file with a different extensions (e.g., `.xml` -> `.json`, `.php` -> `.phps`) to check if the server returns source code or a different representation potentially containing additional, sensitive data. 
+	- -> [[🛠️ Sensitive information disclosure]].
 ### HTTP methods
 
 - **`OPTIONS` lists verbs beyond `GET`/`POST`; `PUT`, `DELETE`, `TRACE`, or `PATCH` accepted**
-	- Send an `OPTIONS` request to list the methods a path accepts, then probe each. 
-	- `PUT` may write a file into the web root, `DELETE` may remove resources, and `TRACE` may enable cross-site tracing. 
-	- The objective is to turn an over-permissive method set into a file write or unintended server behavior. 
-	- → [[🛠️ Configuration and deployment management testing#HTTP methods]].
-- **Access control that depends on the HTTP method**
-	- If `GET /admin` is blocked, retry with `POST`, `HEAD`, or an arbitrary verb. Method-based filtering is often incomplete. 
-
+	- Send an `OPTIONS` request to check if the server returns accepted methods. `PUT` may write a file into the web root, `DELETE` may remove resources, `TRACE` may enable cross-site tracing.
 ### Transport security and headers
 
 >[!note] See [`WSTG-CRYP — OWASP WSTG`](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/) for transport and cryptography tests.
 
 - **Missing HSTS (`Strict-Transport-Security`)**
-	- Without it, a user's first request can be downgraded to HTTP and intercepted. Check the header on every HTTPS response. → [[🛠️ Configuration and deployment management testing#Security headers and TLS]].
-- **Credentials or session cookies sent over HTTP, mixed content, or HTTP endpoints that don't redirect to HTTPS**
-	- Confirm the login form and session cookies travel only over TLS. Cleartext credentials are captured on-path.
-- **Weak TLS configuration**
-	- Outdated protocol versions (SSLv3, TLS 1.0/1.1), weak ciphers, or an expired or misissued certificate. Scan with an SSL/TLS analyzer.
-- **Permissive or missing `Content-Security-Policy`**
-	- A weak CSP means the browser enforces fewer protections, so client-side attacks such as XSS and clickjacking stand a greater chance of success. → [[CSP]].
-- **Other missing security headers**
-	- `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, and framing controls (`X-Frame-Options` / `frame-ancestors`). → [[🛠️ HTTP header reference]].
+	- [`Strict-Transport-Security`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security) (HSTS) enforces communication exclusively over HTTPS; without it, a connection can be downgraded to HTTP and potentially intercepted (Man-in-the-Middle attacks).
+	- -> [[🛠️ Misconfiguration]].
 
-### Cloud and infrastructure exposure
+- **Sensitive information sent over HTTP (mixed content)**
+	- // paraphrase and extend
+	- Check login or other sensitive requests are sent only over HTTPS.
+
+- **Weak TLS configuration**
+	- // paraphrase
+	- Outdated protocols (SSLv3, TLS 1.0/1.1), weak ciphers, expired or misissued certificates. Scan with an SSL/TLS analyzer; scan with an SSL/TLS analyzer.
+
+- **Permissive or missing `Content-Security-Policy`**
+	- // paraphrase
+	- A weak CSP means the browser enforces fewer protections, so client-side attacks such as XSS and clickjacking stand a greater chance of success. 
+	- → [[CSP]].
+
+- **Other missing security headers**
+	- `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, framing controls (`X-Frame-Options` / `frame-ancestors`). 
+	- → [[🛠️ HTTP header reference]].
+
+### Cloud and infrastructure misconfiguration
 
 - **Dangling DNS pointing at a deprovisioned service**
-	- A `CNAME` to an unclaimed S3 bucket, GitHub Pages, Azure, or Heroku app lets you register the target and serve content from the victim's subdomain. This is subdomain takeover.
-- **Publicly readable cloud storage**
-	- Guess or enumerate bucket names (`<company>-backups`, `<app>-assets`) and test for public listing or write access.
+	- A `CNAME` to an unclaimed S3 bucket, GitHub Pages, Azure, or Heroku app lets you register the target and serve content from the victim's subdomain.
+	- -> [[🛠️ Subdomain takeover]].
 
+- **Publicly readable cloud storage**
+	- // paraphrase and extend
+	- Guess/enumerate cloud storage containers (e.g., S3 buckets in AWS, blob containers in Azure, Google storage buckets in GCP) and check for misconfigured access controls
+	- -> [[🛠️ Enumerating S3 buckets]].
 ## Information disclosure
 
 >[!note] See [`WSTG-INFO — OWASP WSTG`](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/01-Information_Gathering/) and [`WSTG-ERRH — OWASP WSTG`](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/08-Testing_for_Error_Handling/).
-
-- Applications leak information through markup, error messages, and files left on the server. A leak is often low-severity alone, but the details it exposes — internal hostnames, file paths, credentials, query structure — are what make the next, higher-impact attack reliable.
-
-### Search engines and metafiles
+### Search engines and meta-files
 
 - **`robots.txt`, `sitemap.xml`, `security.txt`, `.well-known/`**
-	- These files name directories and endpoints the developers wanted hidden from crawlers. Request them directly and add every path to enumeration. → [[robots.txt and other interesting files]].
+	- Check for known files that may contain information useful during security testing, such as hidden or unreferenced endpoints. 
+	- → [[robots.txt and other interesting files]].
 - **Indexed content and cached pages**
-	- Search-engine operators (`site:`, `inurl:`, `filetype:`) surface forgotten pages, exposed documents, and leaked credentials. 
+	- // paraphrase
+	- Use search-engine operators (`site:`, `inurl:`, `filetype:`) to search for indexed forgotten pages, exposed documents, and leaked credentials. 
 	- → [[🛠️ Searching the web]].
 
-### Page content leakage
+### Sensitive information in page content
 
 - **HTML and JavaScript comments, hidden form fields, debug parameters**
-	- Read the raw markup and scripts, not the rendered page. Developers leave internal hostnames, test credentials, deprecated endpoints, and feature flags in comments and hidden fields. Collect every reference and push it back into enumeration and targeted attacks. 
+	-  // extend and paraphrase
+	- Analyze application source HTML and JavaScript; look for leaked credentials and any other valuable information. 
 	- → [[🛠️ Sensitive information disclosure]].
+
 - **Secrets in client-side JavaScript**
 	- API keys, cloud tokens, internal URLs, and hardcoded credentials in bundled scripts and source maps. Pull every `.js` file and the `.map` files beside it, then grep for secrets. 
 	- → [[🛠️ Sensitive information disclosure]].
@@ -250,6 +269,12 @@ proofread: no
 - **Indirect, encoded, or hashed identifiers**
 	- Predictable encodings (Base64, sequential hashes) are still IDOR; decode and iterate them.
 	- → [[IDOR#Attack surface]].
+
+### HTTP verb tampering
+
+- **Access control that depends on the HTTP method**
+	- Test the same endpoint with different methods to check for inconsistent access controls.
+	- -> [[🛠️ HTTP verb tampering]].
 
 ### Privilege escalation and forced browsing
 
@@ -501,3 +526,8 @@ proofread: no
 
 - [`OWASP Web Security Testing Guide — OWASP`](https://owasp.org/www-project-web-security-testing-guide/)
 - [`Attack Surface Identification — OWASP WSTG`](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/01-Information_Gathering/04-Attack_Surface_Identification/)
+
+
+
+- TODO:
+	- Obfuscation/WAF bypass for each vulnerability

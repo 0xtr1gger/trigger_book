@@ -4,6 +4,7 @@ tags:
   - web_hacking
   - authentication
 status: draft
+updated: 2026-09-20
 ---
 
 ## Brute-forcing password reset tokens

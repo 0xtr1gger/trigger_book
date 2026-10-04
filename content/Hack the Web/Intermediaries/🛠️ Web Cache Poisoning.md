@@ -4,7 +4,7 @@ tags:
   - web_hacking
   - intermediaries
 status: draft
-updated: 2026-08-22
+updated: 2026-09-20
 ---
 - To be completed from saved notes
 ## Web Cache Poisoning

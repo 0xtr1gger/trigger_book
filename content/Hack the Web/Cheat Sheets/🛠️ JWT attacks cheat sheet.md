@@ -4,6 +4,7 @@ tags:
   - web_hacking
   - cheatsheet
 status: stub
+updated: 2026-09-20
 ---
 ## JWT vulnerabilities
 

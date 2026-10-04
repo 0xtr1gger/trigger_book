@@ -4,6 +4,7 @@ tags:
   - web_hacking
   - authentication
 status: draft
+updated: 2026-10-04
 ---
 ## Username enumeration
 
@@ -342,7 +343,6 @@ wc -l /usr/share/wordlists/rockyou.txt
 14344392 /usr/share/wordlists/rockyou.txt
 ```
 
->[!note] See [[🛠️ Password wordlists and default credentials]].
 
 ### Password policy
 
@@ -632,7 +632,6 @@ X-Real-IP: §1§
 	- Use a list of pre-generated list of addresses.
 	- Enumerate the last (or any) digit of the IP address with a list of numbers, e.g., `1.1.1.§1§`; you would use the `Numbers` payload type with the `1-254` number range.
 
-![[payload_1.png]]
 
 5. **Configure the attack type** as `Pitchfork` if you want to combine IP spoofing with password/username payloads (one address per password/username you try), or `Cluster bomb` if you want to test all combinations (one IP address per all password/username you try, then another IP address, and so on).
 6. **Start the Intruder attack**.

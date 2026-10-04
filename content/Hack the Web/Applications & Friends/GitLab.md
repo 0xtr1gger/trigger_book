@@ -1,8 +1,8 @@
 ---
 created: 2026-09-13
-updated: 2026-09-13
+updated: 2026-09-20
 ---
->[!abstract]+ **Scope**: GitLab; fingerprinting and version discovery; hunting for secrets in repositories; account registration and username/email enumeration; password spraying; authenticated remote code execution.
+>[!abstract]+ **Scope**: GitLab; fingerprinting and version discovery; username/email enumeration in account registration.
 
 - [ ] Confirm GitLab from the `/users/sign_in` login page.
 - [ ] Browse `/explore` for public projects; inspect available repositories for secrets, keys, and other sensitive information.
@@ -98,7 +98,6 @@ updated: 2026-09-13
 - Default account lockout thresholds:
 	- **Prior to version `16.6`**: GitLab defaults to 10 failed attempts and an automatic account unlock after 10 minutes.  
 	- **Starting in version `16.6`**: GitLab exposes the `max_login_attempts` and `failed_login_attempts_unlock_period_in_minutes` settings in the admin UI; if left untouched, the same defaults apply.
-
 ## References and further reading
 
 - [`Bitbucket vs GitHub vs GitLab — StackShare`](https://stackshare.io/stackups/bitbucket-vs-github-vs-gitlab)

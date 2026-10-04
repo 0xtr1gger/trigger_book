@@ -3,6 +3,7 @@ created: 2026-06-11
 tags:
   - web_hacking
 status: draft
+updated: 2026-09-20
 ---
 ## JavaScript prototypes and inheritance
 

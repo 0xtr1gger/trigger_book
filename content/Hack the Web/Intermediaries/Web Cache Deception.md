@@ -4,6 +4,7 @@ tags:
   - web_caches
   - intermediaries
 status: substantial
+updated: 2026-09-20
 ---
 ## Web Cache Deception
 

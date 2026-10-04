@@ -4,6 +4,7 @@ tags:
   - web_hacking
   - essential_skills
 status: draft
+updated: 2026-09-20
 ---
 
 ## Encoding and decoding

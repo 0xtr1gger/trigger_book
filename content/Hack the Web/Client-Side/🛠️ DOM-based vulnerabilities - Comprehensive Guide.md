@@ -5,6 +5,7 @@ tags:
   - client-side
   - dom
 status: complete
+updated: 2026-09-20
 ---
 # 🛠️ DOM-based vulnerabilities - Comprehensive Guide
 

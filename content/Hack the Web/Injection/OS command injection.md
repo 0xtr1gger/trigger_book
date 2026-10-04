@@ -3,6 +3,7 @@ created: 2026-05-04
 tags:
   - web_hacking
 status: substantial
+updated: 2026-09-20
 ---
 ## OS command injection
 
