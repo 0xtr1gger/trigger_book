@@ -1,6 +1,6 @@
 ---
 created: 2026-08-04
-updated: 2026-10-15
+updated: 2026-10-18
 tags:
   - AD
   - AD_attacks
@@ -32,7 +32,7 @@ tags:
 
 ## AD security descriptors & ACLs
 
->[!note] See [[AD security descriptors and ACLs]].
+
 
 ## Enumerating ACLs
 

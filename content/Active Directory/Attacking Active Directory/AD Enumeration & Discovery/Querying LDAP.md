@@ -1,6 +1,6 @@
 ---
 created: 2026-08-14
-updated: 2026-10-11
+updated: 2026-10-18
 tags:
   - AD
   - AD_attacks
@@ -248,7 +248,8 @@ ldapsearch -x -LLL -H ldap://10.10.11.5 -b 'DC=example,DC=com' -s sub '(&(object
 ldapsearch -x -LLL -H ldap://10.10.11.5 -b 'DC=example,DC=com' -s sub '(&(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))' sAMAccountName userPrincipalName distinguishedName
 ```
 
->[!note] The LDAP matching rule `1.2.840.113556.1.4.803` performs a bitwise `AND` operation against integer attributes such as `userAccountControl`. See [[🛠️ LDAP#Bitwise matching rules (Extensible Match OIDs)]].
+>[!note] The LDAP matching rule `1.2.840.113556.1.4.803` performs a bitwise `AND` operation against integer attributes such as `userAccountControl`.
+
 
 - Enumerate **disabled users**:
 

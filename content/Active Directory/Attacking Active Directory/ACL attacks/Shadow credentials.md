@@ -1,6 +1,6 @@
 ---
 created: 2026-08-20
-updated: 2026-10-14
+updated: 2026-10-18
 tags:
   - AD
   - AD_attacks
@@ -44,8 +44,7 @@ tags:
 - **A DC that supports `PKINIT`** — the domain needs at least one Domain Controller with a certificate for KDC/Domain Controller authentication (i.e., AD CS is deployed). Without it, `PKINIT` fails.
 - **A DC on Windows Server 2016 or later** — Key Trust account mapping was introduced in 2016; earlier DCs ignore the attribute.
 
->[!warning] If no DC holds a suitable certificate, the `PKINIT` step fails with `KDC_ERR_PADATA_TYPE_NOSUPP`. The key-credential write still succeeds, but the key can't be used for `PKINIT`. In that case, authenticate the certificate against LDAPS over Schannel instead (`PassTheCert`). See [[🛠️ Pass-the-Certificate]].
-
+>[!warning] If no DC holds a suitable certificate, the `PKINIT` step fails with `KDC_ERR_PADATA_TYPE_NOSUPP`. The key-credential write still succeeds, but the key can't be used for `PKINIT`. In that case, authenticate the certificate against LDAPS over Schannel instead (`PassTheCert`).
 ### Enumeration
 
 >[!note] See [[AD ACL attacks]] for full ACL enumeration.

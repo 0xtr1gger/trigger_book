@@ -1,3 +1,11 @@
 @use "./variables.scss" as *;
 
+// Tactical HUD theme. To change colors, sizes and effects, edit
+// ./theme/_settings.scss; the other files in ./theme hold the rules.
+@use "./theme/settings";
+@use "./theme/base";
+@use "./theme/chrome";
+@use "./theme/content";
+@use "./theme/callouts";
+
 // put your custom CSS here!
