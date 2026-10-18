@@ -1,6 +1,6 @@
 ---
 created: 2026-09-05
-updated: 2026-10-04
+updated: 2026-10-18
 tags:
   - pivoting
 ---
@@ -20,7 +20,6 @@ tags:
 
 ## How DNS tunneling works
 
->[!note] To learn more about how DNS itself works, see [[🛠️ How DNS works]]
 
 ### Direct vs. recursive resolution
 

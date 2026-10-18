@@ -1,13 +1,11 @@
 ---
 created: 2026-09-08
-updated: 2026-10-06
+updated: 2026-10-18
 tags:
   - shells
 proofread: no
 ---
 ## Interactive vs. non-interactive shells
-
->[!note] For architectural details on process streams, file descriptors, and terminal line disciplines, see [[🛠️ How shells work]].
 
 - Standard network shells (such as non-interactive reverse shells) bind process I/O directly to a raw network socket:
 

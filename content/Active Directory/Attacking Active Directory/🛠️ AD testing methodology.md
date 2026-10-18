@@ -1,6 +1,6 @@
 ---
 created: 2026-10-04
-updated: 2026-10-11
+updated: 2026-10-18
 tags:
   - AD
   - AD_attacks
@@ -43,10 +43,9 @@ hashcat -m 5600 hash.txt /usr/share/wordlists/rockyou.txt
 
 ### NTLM relay
 
->[!note] See [[◯ NTLM relay]].
+
 ### SMB relay
 
->[!note] See [[◯ SMB relay]].
 
 ## Credential hunting in network shares
 
@@ -238,7 +237,6 @@ secretsdump.py -just-dc-user krbtgt domain.local/jdoe:'passwd123'@10.10.11.5
 
 ### Resource-based constrained delegation (RBCD)
 
->[!note] See [[◯ RBCD attacks]].
 
 - Writing `msDS-AllowedToActOnBehalfOfOtherIdentity` on a computer lets a controlled account impersonate any user to services on that host.
 
@@ -246,7 +244,6 @@ secretsdump.py -just-dc-user krbtgt domain.local/jdoe:'passwd123'@10.10.11.5
 
 - Abuse a misconfigured certificate services PKI to obtain certificates that authenticate as privileged accounts and survive password resets.
 
->[!note] See [[🛠️ Pass-the-Certificate]].
 
 - Exchange a stolen or forged certificate for a Kerberos TGT via PKINIT:
 

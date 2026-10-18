@@ -1,0 +1,399 @@
+// Note content: headings, links, text, lists, tables, quotes, code, footnotes.
+// `.markdown-rendered` wraps a note's body on pages, in popovers and in the
+// search preview.
+
+@use "./mixins" as *;
+
+// ── Headings ───────────────────────────────────────────────────────────────
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--headerFont);
+  font-weight: var(--heading-weight);
+  letter-spacing: 0.01em;
+  line-height: 1.25;
+  color: var(--dark);
+}
+
+.markdown-rendered {
+  & h1 {
+    font-size: 1.8rem;
+  }
+
+  & h2 {
+    font-size: 1.45rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--lightgray);
+
+    &::before {
+      content: var(--h2-marker);
+      color: var(--secondary);
+      font-family: var(--codeFont);
+      font-weight: 400;
+      font-size: 0.9em;
+    }
+  }
+
+  & h3 {
+    font-size: 1.18rem;
+
+    &::before {
+      content: var(--h3-marker);
+      color: var(--tertiary);
+      font-family: var(--codeFont);
+      font-weight: 400;
+    }
+  }
+
+  & h4,
+  & h5,
+  & h6 {
+    font-size: 1rem;
+  }
+}
+
+// heading anchor (#) link
+:is(h1, h2, h3, h4, h5, h6)[id] > a[role="anchor"] {
+  color: var(--tertiary);
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+
+  & svg {
+    width: 15px;
+    height: 15px;
+    vertical-align: middle;
+  }
+}
+
+// ── Text ───────────────────────────────────────────────────────────────────
+.markdown-rendered strong {
+  color: var(--dark);
+}
+
+.text-highlight {
+  background-color: var(--textHighlight);
+  color: var(--dark);
+  border-radius: var(--radius);
+  padding: 0 0.15rem;
+}
+
+// ── Links ──────────────────────────────────────────────────────────────────
+a {
+  color: var(--secondary);
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+
+  &:hover {
+    color: var(--tertiary);
+  }
+
+  &.internal {
+    border-radius: var(--radius);
+    padding: 0 0.15rem;
+  }
+
+  &.external .external-icon > path {
+    fill: var(--tertiary);
+  }
+
+  // code inside a link takes the link's color
+  & code {
+    color: inherit;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+    border-color: color-mix(in srgb, currentColor 25%, transparent);
+  }
+}
+
+.markdown-rendered a.internal:not(.tag-link):not([role="anchor"]):not(:has(> img)) {
+  box-shadow: inset 0 -1px 0 tint(var(--secondary), 40%);
+}
+
+// ── Lists and tasks ────────────────────────────────────────────────────────
+.markdown-rendered {
+  & ul > li::marker {
+    color: var(--secondary);
+  }
+
+  & ol > li::marker {
+    color: var(--tertiary);
+    font-family: var(--codeFont);
+    font-size: 0.9em;
+  }
+}
+
+input[type="checkbox"] {
+  background-color: var(--surface);
+  border-color: var(--border-strong);
+  border-radius: var(--radius);
+
+  &:checked {
+    background-color: var(--tertiary);
+    border-color: var(--tertiary);
+
+    &::after {
+      border-color: var(--on-accent);
+    }
+  }
+}
+
+// ── Quotes, embeds, rules ──────────────────────────────────────────────────
+blockquote:not(.callout):not(.transclude) {
+  margin: 1.2rem 0;
+  padding: 0.2rem 1.1rem;
+  border-left: 3px solid var(--secondary);
+  background: tint(var(--secondary), 6%);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.transclude {
+  padding: 0.2rem 1rem;
+  border-left: 2px solid var(--tertiary);
+  background: var(--surface);
+}
+
+hr {
+  height: 1px;
+  border: 0;
+  background: repeating-linear-gradient(90deg, var(--border-strong) 0 10px, transparent 10px 18px);
+}
+
+// ── Tables ─────────────────────────────────────────────────────────────────
+.table-container > table {
+  width: 100%;
+  margin: 1.2rem 0;
+  font-size: 0.93rem;
+
+  & > * {
+    line-height: 1.6rem;
+  }
+
+  & th {
+    @include label;
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    color: var(--dark);
+    padding: 0.5rem 0.7rem;
+    border-bottom: 2px solid var(--secondary);
+    background: tint(var(--secondary), 7%);
+  }
+
+  & td {
+    padding: 0.45rem 0.7rem;
+  }
+
+  & tr {
+    border-bottom-color: var(--lightgray);
+  }
+
+  & tbody tr:hover {
+    background: tint(var(--tertiary), 6%);
+  }
+}
+
+// ── Inline code ────────────────────────────────────────────────────────────
+code {
+  font-size: 0.86em;
+  color: var(--tertiary);
+  background: color-mix(in srgb, var(--tertiary) 10%, var(--surface));
+  border: 1px solid tint(var(--tertiary), 20%);
+  border-radius: var(--radius);
+  padding: 0.05rem 0.3rem;
+}
+
+// ── Code blocks ────────────────────────────────────────────────────────────
+pre {
+  background: var(--surface-raised);
+  border: 1px solid var(--lightgray);
+  border-top-color: var(--border-strong);
+  border-radius: var(--radius);
+  @include notch;
+
+  & > code {
+    font-size: 0.84rem;
+    color: var(--code-text);
+    background: none;
+    border: 0;
+    border-radius: 0;
+    padding: 0.6rem 0;
+
+    & > [data-line] {
+      padding: 0 0.9rem 0 0.4rem;
+
+      &::before {
+        color: var(--gray);
+        opacity: 0.6;
+      }
+
+      &[data-highlighted-line] {
+        background-color: var(--highlight);
+        border-left-color: var(--secondary);
+      }
+    }
+
+    & [data-highlighted-chars] {
+      background-color: var(--highlight);
+      border-radius: var(--radius);
+    }
+
+    // syntax colors by token type (settings → section 5)
+    & span {
+      color: var(--code-text);
+    }
+    & span[data-token-type="keyword"] {
+      color: var(--code-keyword);
+    }
+    & span[data-token-type="function"] {
+      color: var(--code-function);
+    }
+    & span[data-token-type="string"] {
+      color: var(--code-string);
+    }
+    & span[data-token-type="value"] {
+      color: var(--code-value);
+    }
+    & span[data-token-type="comment"] {
+      color: var(--code-comment);
+      font-style: italic;
+    }
+    & span[data-token-type="operator"] {
+      color: var(--code-operator);
+    }
+    & span[data-token-type="punctuation"] {
+      color: var(--code-punctuation);
+    }
+    & span[data-token-type="tag"] {
+      color: var(--code-tag);
+    }
+    & span[data-token-type="property"] {
+      color: var(--code-property);
+    }
+    & span[data-token-type="important"] {
+      color: var(--code-important);
+    }
+    & span[data-token-type="error"] {
+      color: var(--code-error);
+    }
+    & span[data-token-type="regexp"] {
+      color: var(--code-regexp);
+    }
+  }
+
+  // mermaid diagrams get the same panel look
+  &:has(> code.mermaid) {
+    padding: 1rem;
+    border: 1px solid var(--lightgray);
+    text-align: center;
+  }
+}
+
+figure[data-rehype-pretty-code-figure] {
+  margin: 1.2rem 0;
+
+  // code block title: ```bash title="install.sh"
+  & > [data-rehype-pretty-code-title] {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.76rem;
+    color: var(--label);
+    background: var(--surface-raised);
+    border: 1px solid var(--lightgray);
+    border-bottom: 0;
+    border-radius: var(--radius) var(--radius) 0 0;
+
+    &::before {
+      content: "▶";
+      color: var(--secondary);
+      font-size: 0.6em;
+    }
+
+    & + pre {
+      border-top-left-radius: 0;
+    }
+  }
+}
+
+// copy / expand buttons — `pre >` outranks the plugins' own (unlayered) CSS
+pre > .clipboard-button,
+pre > .expand-button {
+  margin: 0.4rem;
+  color: var(--label);
+  background: var(--surface);
+  border: 1px solid var(--lightgray);
+  border-radius: var(--radius);
+
+  & > svg {
+    fill: var(--label);
+    filter: none;
+  }
+
+  &:hover {
+    border-color: var(--tertiary);
+
+    & > svg {
+      fill: var(--tertiary);
+    }
+  }
+}
+
+// full-screen mermaid viewer (`body` outranks the plugin's unlayered CSS)
+body #mermaid-container {
+  background: color-mix(in srgb, var(--light) 65%, transparent);
+
+  & > #mermaid-space {
+    background-color: var(--surface);
+    border-color: var(--border-strong);
+    border-radius: var(--radius);
+
+    & > .mermaid-controls {
+      background: var(--surface-raised);
+      border-color: var(--lightgray);
+      border-radius: var(--radius);
+
+      & .mermaid-control-button {
+        color: var(--darkgray);
+        background: var(--surface);
+        border-color: var(--lightgray);
+        border-radius: var(--radius);
+
+        &:hover {
+          color: var(--tertiary);
+          border-color: var(--tertiary);
+          background: var(--surface);
+        }
+      }
+    }
+  }
+}
+
+// ── Media and math ─────────────────────────────────────────────────────────
+img,
+video,
+audio,
+.external-embed.youtube,
+iframe.pdf {
+  border-radius: var(--radius);
+}
+
+// ── Footnotes ──────────────────────────────────────────────────────────────
+.footnotes {
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--lightgray);
+  font-size: 0.9rem;
+
+  & a {
+    color: var(--tertiary);
+  }
+}
+
+[data-footnote-ref] {
+  font-family: var(--codeFont);
+  color: var(--tertiary);
+}

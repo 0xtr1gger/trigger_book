@@ -1,5 +1,5 @@
 ---
-updated: 2026-09-20
+updated: 2026-10-18
 created: 2026-07-21
 tags:
   - Windows
@@ -29,14 +29,16 @@ status: incomplete
 1. **Triggering remote DCOM activation**: RoguePotato calls `CoGetInstanceFromIStorage()` with a custom `OBJREF` containing binding strings pointing to your external listener IP. `RPCSS` initiates an OXID resolution (`ResolveOxid2`) query to your listener IP on TCP port 135.
 2. **Redirecting OXID requests**: A port forwarder (`socat`) on your remote listener host receives the port 135 connection and forwards the request back to a fake OXID resolver listening on a custom port on the target host.
 3. **Returning poisoned RPC bindings**: The fake OXID resolver implements `IObjectExporter` and returns a poisoned named pipe binding string:
-   ```
-   ncacn_np:localhost/pipe/roguepotato[\pipe\epmapper]
-   ```
-   - Windows normalizes the forward slash into `\\localhost\pipe\roguepotato\pipe\epmapper`, connecting `RPCSS` to RoguePotato's named pipe listener.
+   
+```
+ncacn_np:localhost/pipe/roguepotato[\pipe\epmapper]
+```
+- Windows normalizes the forward slash into `\\localhost\pipe\roguepotato\pipe\epmapper`, connecting `RPCSS` to RoguePotato's named pipe listener.
+
 4. **Capturing NETWORK SERVICE security context**: `RPCSS` connects to the named pipe to execute `IRemUnknown2`. RoguePotato calls `ImpersonateNamedPipeClient()` to acquire the token. The token belongs to `NETWORK SERVICE` but carries the Logon ID (LUID) of the `RPCSS` process.
 5. **Executing Token Kidnapping for SYSTEM access**: RoguePotato inspects active process handles inside the `rpcss` process context, extracts existing `NT AUTHORITY\SYSTEM` token handles, duplicates them via `DuplicateTokenEx()`, and launches the target process using `CreateProcessWithTokenW()`.
 
-> [!note] See [[🛠️ COM, DCOM, and RPC]] for details on OXID resolution. See [[🛠️ Named pipes]] for named pipe impersonation. See [[Access tokens and impersonation]] for token duplication details.
+> [!note] See [[Access tokens and impersonation]].
 
 ## Setting up the remote redirector
 

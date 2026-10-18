@@ -1,0 +1,120 @@
+// Callouts: Obsidian's colorful types, tuned for the dark HUD.
+// Hues live in _settings.scss (section 6); border and fill are mixed from them.
+
+@use "./mixins" as *;
+
+.callout {
+  --border: color-mix(in srgb, var(--color) var(--callout-edge), transparent);
+  --bg: color-mix(in srgb, var(--color) var(--callout-fill), var(--surface));
+  margin: 1.2rem 0;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--color);
+  border-radius: var(--radius);
+  background-color: var(--bg);
+  @include notch;
+
+  // icons for the vault's custom types (Lucide)
+  --callout-icon-interesting: url('data:image/svg+xml; utf8, <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>');
+  --callout-icon-burp: url('data:image/svg+xml; utf8, <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="22" x2="18" y1="12" y2="12"></line><line x1="6" x2="2" y1="12" y2="12"></line><line x1="12" x2="12" y1="6" y2="2"></line><line x1="12" x2="12" y1="22" y2="18"></line></svg>');
+  --callout-icon-definition: url('data:image/svg+xml; utf8, <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>');
+
+  // type → hue (and icon, where Quartz has none)
+  --color: var(--callout-note);
+  &[data-callout="abstract"] {
+    --color: var(--callout-abstract);
+  }
+  &[data-callout="info"] {
+    --color: var(--callout-info);
+  }
+  &[data-callout="todo"] {
+    --color: var(--callout-todo);
+  }
+  &[data-callout="tip"] {
+    --color: var(--callout-tip);
+  }
+  &[data-callout="success"] {
+    --color: var(--callout-success);
+  }
+  &[data-callout="question"] {
+    --color: var(--callout-question);
+  }
+  &[data-callout="warning"] {
+    --color: var(--callout-warning);
+  }
+  &[data-callout="failure"] {
+    --color: var(--callout-failure);
+  }
+  &[data-callout="danger"] {
+    --color: var(--callout-danger);
+  }
+  &[data-callout="bug"] {
+    --color: var(--callout-bug);
+  }
+  &[data-callout="example"] {
+    --color: var(--callout-example);
+  }
+  &[data-callout="quote"] {
+    --color: var(--callout-quote);
+  }
+  &[data-callout="interesting"] {
+    --color: var(--callout-interesting);
+    --callout-icon: var(--callout-icon-interesting);
+  }
+  &[data-callout="burp"] {
+    --color: var(--callout-burp);
+    --callout-icon: var(--callout-icon-burp);
+  }
+  &[data-callout="definition"] {
+    --color: var(--callout-definition);
+    --callout-icon: var(--callout-icon-definition);
+  }
+}
+
+.callout-title {
+  align-items: center;
+  gap: 0.5rem;
+
+  & .callout-title-inner {
+    font-family: var(--callout-title-font);
+    font-weight: var(--callout-title-weight);
+  }
+}
+
+// Quartz folds a callout by zeroing its children's height and spacing; repeat
+// that here so the theme's own margins (code blocks, quotes) don't reopen it.
+.callout.is-collapsed > .callout-content > * {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-width: 0;
+}
+
+// links, inline code and bullets inside a callout take its hue
+:is(.callout-title, .callout-content) {
+  & a {
+    color: var(--color);
+
+    &:hover {
+      color: var(--dark);
+    }
+  }
+
+  & a.internal:not(.tag-link) {
+    background-color: tint(var(--color), 14%);
+  }
+
+  .markdown-rendered & a.internal:not(.tag-link):not([role="anchor"]):not(:has(> img)) {
+    box-shadow: inset 0 -1px 0 tint(var(--color), 45%);
+  }
+
+  & :not(pre) > code {
+    color: var(--color);
+    background: color-mix(in srgb, var(--color) 14%, var(--surface));
+    border-color: tint(var(--color), 26%);
+  }
+
+  & ul > li::marker {
+    color: var(--color);
+  }
+}

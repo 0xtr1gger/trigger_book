@@ -1,0 +1,41 @@
+// Clipped top-right corner — the HUD "notch". Size comes from --cut.
+@mixin notch {
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+}
+
+// Two notches: top-right and bottom-left.
+@mixin notch-2 {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--cut)) 0,
+    100% var(--cut),
+    100% 100%,
+    var(--cut) 100%,
+    0 calc(100% - var(--cut))
+  );
+}
+
+// Small uppercase UI label (sidebar titles, table headers, property header).
+@mixin label {
+  font-family: var(--font-label);
+  font-weight: var(--heading-weight);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+
+// Red corner bracket drawn before a label.
+@mixin bracket {
+  content: "";
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-left: 2px solid var(--secondary);
+  border-top: 2px solid var(--secondary);
+}
+
+// Translucent version of a color: `tint(var(--tertiary), 12%)`.
+@function tint($color, $amount) {
+  @return color-mix(in srgb, #{$color} #{$amount}, transparent);
+}

@@ -1,6 +1,6 @@
 ---
 created: 2026-07-21
-updated: 2026-09-20
+updated: 2026-10-18
 tags:
   - Windows
   - Windows_PrivEsc
@@ -33,7 +33,7 @@ status: substantial
   3. **Capturing SYSTEM NTLM authentication**: The `RPCSS` service authenticates to GodPotato's local listener as `NT AUTHORITY\SYSTEM`.
   4. **Duplicating access tokens**: GodPotato extracts the impersonation token from the NTLM exchange, calls `DuplicateTokenEx()` to create a primary token, and calls `CreateProcessWithTokenW()` to launch the designated process.
 
-> [!note] See [[Access tokens and impersonation]] for token duplication details. See [[🛠️ COM, DCOM, and RPC]] for information on DCOM activation.
+> [!note] See [[Access tokens and impersonation]].
 
 ## Gathering prerequisite information
 

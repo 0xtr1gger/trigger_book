@@ -1,6 +1,6 @@
 ---
 created: 2026-07-30
-updated: 2026-10-11
+updated: 2026-10-18
 tags:
   - AD
   - AD_attacks
@@ -14,7 +14,7 @@ status: complete
 
 - The LLMNR/NBT-NS poisoning attack doesn't require any credentials, only access to the target network. This makes it a standard first technique in internal engagements. 
 
-- Captured hashes can be cracked ([[Hashcat]]/[[🛠️ JohnTheRipper]]) or used in [[◯ SMB relay]] when SMB signing is disabled.
+- Captured hashes can be cracked ([[Hashcat]]/[[🛠️ JohnTheRipper]]) or used in SMB relay when SMB signing is disabled.
 
 >[!note] MITRE ATT&CK: [`T1557.001 — Adversary-in-the-Middle: Name Resolution Poisoning and SMB Relay`](https://attack.mitre.org/techniques/T1557/001/).
 
@@ -53,7 +53,7 @@ status: complete
 - You start listening for LLMNR/NBT-NS traffic and answer every fallback query faster than any legitimate host, so the victim connects to **your machine** instead of the intended destination. 
 - The victim then authenticates to your rogue service (SMB, HTTP, MSSQL, FTP, LDAP, etc.) and reveals a **NetNTLMv2** challenge-response.
 
->[!note] See [[🛠️ NTLM]].
+---
 
 - Poisoning only works when a client resolves a name that **fails DNS resolution**; otherwise the fallback protocols are not used. 
 - Common triggers: 

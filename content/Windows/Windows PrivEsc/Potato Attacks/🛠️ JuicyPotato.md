@@ -1,6 +1,6 @@
 ---
 created: 2026-07-20
-updated: 2026-09-20
+updated: 2026-10-18
 tags:
   - Windows
   - Windows_PrivEsc
@@ -32,7 +32,6 @@ https://medium.com/@moustafaabdelmaksoud/windows-privilege-escalation-skills-ass
   4. **Acquiring impersonation tokens**: JuicyPotato uses NTLM reflection across a local named pipe. Calling `ImpersonateNamedPipeClient()` assigns the security context of the `SYSTEM` connection to the current thread.
   5. **Spawning privileged processes**: The thread's impersonation token cannot launch new processes directly. JuicyPotato calls `DuplicateTokenEx()` to generate a primary token, then launches the payload using `CreateProcessWithTokenW()` (requiring `SeImpersonatePrivilege`) or `CreateProcessAsUserW()` (requiring `SeAssignPrimaryTokenPrivilege`).
 
-> [!note] See [[🛠️ COM, DCOM, and RPC]] for details on DCOM activation and `RPCSS`. See [[🛠️ Named pipes]] for named pipe impersonation. See [[Access tokens and impersonation]] for token duplication.
 
 ### CLSID selection guidelines
 

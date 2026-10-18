@@ -1,0 +1,97 @@
+// ============================================================================
+//  TACTICAL HUD — theme settings
+//
+//  Every color, size and effect of the site theme is set here. Change a value,
+//  rebuild (`npx quartz build --serve` reloads on save) and the whole site
+//  follows: sidebars, notes, code, callouts, search, popovers and the graph.
+//
+//  Font FAMILIES aren't set here: they live in quartz.config.yaml →
+//  configuration.theme.typography (header / body / code), because Quartz
+//  downloads them from Google Fonts. Quartz loads weights 400 + 700 for the
+//  header font and 400 + 600 for the body and code fonts.
+// ============================================================================
+
+:root {
+  // ── 1. Base palette ──────────────────────────────────────────────────────
+  // Quartz's own color tokens. Keep 1a as plain #hex: the graph view parses
+  // them. quartz.config.yaml holds a copy of these (configuration.theme.colors)
+  // that's only used for social-preview images; update it too if you care
+  // about those matching.
+
+  // 1a. Neutrals and accents
+  --light: #0a0e17; // page background
+  --lightgray: #22324f; // hairlines, dividers, hover fills, graph links
+  --gray: #687ea2; // muted text: dates, line numbers, graph nodes
+  --darkgray: #b4c2d8; // body text
+  --dark: #eaf1fb; // headings, bold text, graph labels
+  --secondary: #ff4d5e; // ACCENT 1 (red): links, folders, markers, current graph node
+  --tertiary: #4aa8ff; // ACCENT 2 (blue): hovers, active items, inline code, visited graph nodes
+
+  // 1b. Translucent fills
+  --highlight: rgba(255, 77, 94, 0.13); // internal-link chip, highlighted code line
+  --textHighlight: rgba(255, 199, 92, 0.26); // ==highlighted text==
+
+  // ── 2. Surfaces and UI text ──────────────────────────────────────────────
+  --surface: #0d1420; // panels: callouts, search box, properties, graph box
+  --surface-raised: #10192a; // code blocks, popovers, search modal
+  --border-strong: #35507e; // emphasized lines: dashed rules, checkbox, modal frames
+  --label: #6f88ac; // small uppercase UI labels, breadcrumbs, icons
+  --on-accent: #04121e; // ink drawn on solid accent fills (checked box, hovered tag)
+
+  // ── 3. Typography roles ──────────────────────────────────────────────────
+  // --titleFont, --headerFont, --bodyFont and --codeFont come from the config.
+  --font-label: var(--headerFont); // sidebar titles, table headers, property header
+  --heading-weight: 700;
+  --callout-title-font: var(--bodyFont); // var(--headerFont) for the HUD face
+  --callout-title-weight: 600;
+
+  // ── 4. Shape and effects ─────────────────────────────────────────────────
+  --radius: 2px; // corner rounding of boxes and chips
+  --cut: 9px; // clipped "HUD" corner on panels, code and callouts; 0px = square
+  --glow: 5px; // blur of hover glows; 0px = none
+  --grid-size: 64px; // spacing of the background grid
+  --grid-opacity: 0.35; // background grid strength; 0 = off
+  --h2-marker: "▚ "; // glyph before h2 in notes; "" = none
+  --h3-marker: "// "; // glyph before h3 in notes; "" = none
+
+  // ── 5. Code blocks ───────────────────────────────────────────────────────
+  // Applied by token type, for every language.
+  --code-text: #c4d2e8; // plain text, variables
+  --code-keyword: #ff5e78; // if, for, function, class, …
+  --code-function: #4aa8ff; // function and command names
+  --code-string: #39d3b4; // strings, escapes, inserted diff lines
+  --code-value: #f0b144; // numbers, constants, booleans
+  --code-comment: #6680a6; // comments (shown in italics)
+  --code-operator: #ff8aa0; // = + | && …
+  --code-punctuation: #8fa4c4; // brackets, commas, separators
+  --code-tag: #ff5e78; // HTML/XML tags, markdown headings
+  --code-property: #6cc0ff; // types, classes, object properties
+  --code-important: #f0b144; // parameters, attributes, changed diff lines
+  --code-error: #ff5e78; // invalid code, deleted diff lines
+  --code-regexp: #39d3b4; // regular expressions
+
+  // ── 6. Callouts ──────────────────────────────────────────────────────────
+  // One hue per callout type; border and background are mixed from it.
+  // Aliases follow Obsidian (tldr → abstract, caution → warning, error → danger, …).
+  // To add a type, add a variable here and a matching line in _callouts.scss.
+  --callout-fill: 9%; // how much of the hue tints the background
+  --callout-edge: 36%; // how much of the hue shows in the border
+
+  --callout-note: #4aa3ff;
+  --callout-abstract: #2bd4d4;
+  --callout-info: #38bdf8;
+  --callout-todo: #38bdf8;
+  --callout-tip: #2ee6a6;
+  --callout-success: #35d07f;
+  --callout-question: #f2c14e;
+  --callout-warning: #ff9f45;
+  --callout-failure: #ff6168;
+  --callout-danger: #ff5a5f;
+  --callout-bug: #ff5a5f;
+  --callout-example: #b084ff;
+  --callout-quote: #8aa0b8;
+  // custom types used in the vault
+  --callout-interesting: #ff7ad1;
+  --callout-burp: #ff8a3d;
+  --callout-definition: #8b9cff;
+}

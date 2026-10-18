@@ -1,6 +1,6 @@
 ---
 created: 2026-09-26
-updated: 2026-09-30
+updated: 2026-10-18
 tags:
   - OSINT
   - web_hacking
@@ -22,7 +22,6 @@ status: complete
 	- Applications not intended to be public, such as development, test, and staging versions.
 
 >[!note] See [[How search engines work]].
-
 ### Search engines
 
 - Each search engine maintains its own index, ranking algorithms, and operator syntax, so the same query returns different results on different engines. Don't limit yourself to a single engine.

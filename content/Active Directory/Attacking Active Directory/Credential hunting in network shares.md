@@ -1,6 +1,6 @@
 ---
 created: 2026-09-04
-updated: 2026-10-10
+updated: 2026-10-18
 tags:
   - AD
   - AD_attacks
@@ -67,8 +67,6 @@ Snaffler.exe -s -n targets.txt -o subnet_scan.log -v data
 Snaffler.exe -s -i '\\10.10.11.5\IT_Share' -o it_share.log -v data
 ```
 
->[!example]+
->![[Pasted image 20261010173729.png]]
 
 | Option | Description                                                                                    |
 | ------ | ---------------------------------------------------------------------------------------------- |
@@ -274,7 +272,8 @@ Get-ChildItem -Path '\\10.10.11.5\IT' -Recurse -Include *.txt,*.config,*.xml,*.i
 - `SYSVOL` (`\\<DOMAIN>\SYSVOL`) is the domain-wide share replicated to every Domain Controller and readable by all authenticated users.
 - `NETLOGON` (`\\<DOMAIN>\NETLOGON`) is the logon-script share hosted within it, also readable by any domain account.
 
-> [!note] See [[🛠️ GPOs]] for how Group Policy is stored and applied.
+---
+
 
 - Before `MS14-025` (May 2014), GPP could configure local users, services, scheduled tasks, and mapped drives with an embedded password stored in the `cpassword` attribute. 
 - The value is encrypted with a **static AES-256 key that Microsoft published** in the [`MS-GPPREF`](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-gppref/2c15cbf0-f086-4c74-8b70-1f2fa45dd4be) protocol specification — any `cpassword` can therefore be decrypted offline.

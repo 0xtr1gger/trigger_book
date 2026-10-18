@@ -1,0 +1,56 @@
+// Page-wide basics: color scheme, background grid, selection, scrollbars.
+
+:root {
+  color-scheme: dark;
+  accent-color: var(--secondary);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+body {
+  background-color: var(--light);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  // engineering grid + faint blue glow from the top edge
+  &::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      linear-gradient(var(--lightgray) 1px, transparent 1px) 0 0 / 100% var(--grid-size),
+      linear-gradient(90deg, var(--lightgray) 1px, transparent 1px) 0 0 / var(--grid-size) 100%;
+    opacity: var(--grid-opacity);
+    mask-image: radial-gradient(140% 110% at 50% 0%, #000 55%, transparent 100%);
+  }
+
+  &::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      120% 70% at 50% -10%,
+      color-mix(in srgb, var(--tertiary) 7%, transparent),
+      transparent 60%
+    );
+  }
+}
+
+::selection {
+  background: color-mix(in srgb, var(--tertiary) 35%, transparent);
+  color: var(--dark);
+}
+
+:focus-visible {
+  outline: 1px solid var(--tertiary);
+  outline-offset: 2px;
+}
+
+.navigation-progress {
+  background: var(--secondary);
+  box-shadow: 0 0 var(--glow) var(--secondary);
+}
