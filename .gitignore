@@ -11,8 +11,4 @@ private/
 replit.nix
 .quartz/
 quartz/cli/tui/dist/
-.space
-**/.space/
-**/.trash/
-Roadmap.md
-.vscode
+.turbo/
