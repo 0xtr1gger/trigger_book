@@ -3,6 +3,7 @@ created: 2026-04-19
 tags:
   - walkthrough
   - SQL
+updated: 2026-10-04
 ---
 >[!note]+ Labs are numbered as per order in [the list of SQL injection labs](https://portswigger.net/web-security/all-labs#sql-injection).
 
@@ -84,9 +85,7 @@ Solved!
 
 ### Solution
 
-- Navigate to `My account` to see the login form:
-
-![[images/walkthrough/PortSwigger/SQLi/lab2/1.png]]
+- Navigate to `My account` to see the login form.
 
 - Test the login functionality first; the `POST` request looks like this:
 

@@ -1,6 +1,6 @@
 ---
 created: 2026-07-18
-updated: 2026-09-30
+updated: 2026-10-01
 tags:
   - web_hacking
   - intel
@@ -23,7 +23,7 @@ proofread: yes
 > - **Outdated content**: older, still-active versions of APIs (`/v1/` vs. `/v2/`), and components with known vulnerabilities.
 > - **Source code exposure**: `.git/`, `.svn/`, `.DS_Store`.
 
->[!note] See [[🛠️ Sensitive information disclosure in web content]].
+>[!note] See [[🛠️ Sensitive information disclosure]].
 
 >[!tip] Inspect files such as `robots.txt` and `sitemap.xml`, as well as resources in the `/.well-known/` directory. They may provide an initial overview of the application to guide crawling and fuzzing. See [[robots.txt and other interesting files]].
 

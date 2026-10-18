@@ -3,7 +3,7 @@ created: 2026-05-04
 tags:
   - web_hacking
 status: substantial
-updated: 2026-09-20
+updated: 2026-10-06
 ---
 ## OS command injection
 
@@ -337,13 +337,16 @@ ls${IFS}-la${IFS}/home/
 {id}                    # single command, also works
 ```
 
->[!warning] Whether execution via brace expansion will work depends on the shell
+>[!warning]+ Whether execution via brace expansion will work depends on the shell
 >- Bash that performs brace expansion first, expands `{cat,/etc/passwd}` to `cat /etc/passwd` and executes it. 
 >- Zsh, for example, **does support** brace expansion, too, but it **expects it to be part of another command**. So, `echo {cat,/etc/passwd}` expands to `echo cat /etc/passwd`, but `{cat,/etc/passwd}` alone doesn't trigger execution.
 >- POSIX `sh` (like Dash) **does not support brace expansion at all**. But in some cases, `/bin/sh` is actually linked to Bash.
 
 >[!note] See [`Brace Expansion — Bash Reference Manual, gnu.org`](https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html).
- 
+
+- **Alternative whitespace characters**
+	- Instead of a space (`%20`), try a newline (`%0A`) or a tab (`%09`).
+
 - **Bash input redirection**
 	- You can often use redirect operators — `<` for `stdin` and `>` for `stdout` — as command separators.
 

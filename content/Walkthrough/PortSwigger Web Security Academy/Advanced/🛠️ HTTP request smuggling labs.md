@@ -1,5 +1,6 @@
 ---
 created: 2026-06-06
+updated: 2026-09-20
 ---
 - Order:
 	1. [[#13. HTTP request smuggling, basic CL.TE vulnerability]]

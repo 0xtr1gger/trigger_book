@@ -1,5 +1,6 @@
 ---
 created: 2026-05-15
+updated: 2026-09-20
 ---
 
 - XSS: 1 lab

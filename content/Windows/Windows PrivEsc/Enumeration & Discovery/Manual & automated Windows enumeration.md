@@ -1,6 +1,6 @@
 ---
 created: 2026-07-20
-updated: 2026-09-20
+updated: 2026-10-04
 tags:
   - Windows
   - Windows_PrivEsc
@@ -1610,7 +1610,6 @@ reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v Pr
 Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" | Select-Object EnableLUA,ConsentPromptBehaviorAdmin,PromptOnSecureDesktop
 ```
 
->[!note] See [[🛠️ UAC bypasses]].
 
 >[!note] [`reg query`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/reg-query) · [`Get-ItemProperty`](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-itemproperty)
 

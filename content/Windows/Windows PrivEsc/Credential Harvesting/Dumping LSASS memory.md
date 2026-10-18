@@ -1,6 +1,6 @@
 ---
 created: 2026-07-21
-updated: 2026-09-20
+updated: 2026-10-11
 tags:
   - Windows
   - Windows_PrivEsc
@@ -237,7 +237,7 @@ lsassy -d <domain> -u <user> -p <password> <targets>
 lsassy -d example.com -u jdoe -p 'passwd123' 10.10.11.5
 ```
 
-- Extract credentials using [[🛠️ Pass-the-Hash]]:
+- Extract credentials using [[Pass-the-Hash]]:
 
 ```bash
 lsassy -u <user> -H <NT_hash> <targets>

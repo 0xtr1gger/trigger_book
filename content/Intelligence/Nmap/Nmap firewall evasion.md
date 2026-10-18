@@ -1,9 +1,10 @@
 ---
 created: 2026-07-17
 tags:
-  - recon
   - nmap
+  - intel
 status: review_needed
+updated: 2026-09-28
 ---
 ## Firewalls, IDSs, and IPSs
 

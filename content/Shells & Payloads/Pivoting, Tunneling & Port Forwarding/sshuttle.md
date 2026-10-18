@@ -1,12 +1,10 @@
 ---
 created: 2026-09-05
-updated: 2026-09-12
+updated: 2026-10-10
 tags:
   - pivoting
   - ssh
 ---
-
->[!abstract]+ **Scope**: `sshuttle`.
 ## `sshuttle`
 
 >[`sshuttle`](https://github.com/sshuttle/sshuttle) is a transparent proxy that provides VPN-like access to remote networks over SSH (it's often called a "poor man's VPN"). It establishes an SSH connection to a remote host and transparently relays traffic through it.

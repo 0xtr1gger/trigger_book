@@ -2,6 +2,7 @@
 created: 2026-04-30
 tags:
   - walkthrough
+updated: 2026-09-20
 ---
 
 >[!note]+ Labs are numbered as per order in [the list of Authentication injection labs](https://portswigger.net/web-security/all-labs#authentication).

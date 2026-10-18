@@ -1,5 +1,6 @@
 ---
 created: 2026-05-03
+updated: 2026-09-20
 ---
 >[!note]+ Labs are numbered as per order in [the SSRF vulnerabilities](https://portswigger.net/web-security/all-labs#server-side-request-forgery-ssrf).
 

@@ -1,5 +1,6 @@
 ---
 created: 2026-05-02
+updated: 2026-09-20
 ---
 >[!note]+ Labs are numbered as per order in [the list of on file upload vulnerabilities](https://portswigger.net/web-security/all-labs#file-upload-vulnerabilities).
 

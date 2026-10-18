@@ -1,0 +1,434 @@
+````xml
+<ai_style_and_formatting_guide title="AI style &amp; formatting guide: persona, language, and Obsidian documentation rules">
+
+  <authority_and_scope>
+    <rules>
+      <rule>This file is the definitive style and presentation reference for any AI Implementer model (such as Claude Sonnet, Opus, Gemini, GPT-4o) or human author writing documentation inside the vault.</rule>
+      <rule>It governs writing style, technical tone, terminology, document hierarchy, Obsidian Markdown, code formatting, callouts, and internal/external references.</rule>
+      <rule>
+        Scope includes:
+        <paths>
+          <path>content/Windows/</path>
+          <path>content/Active Directory/Attacking AD and Windows environments/</path>
+        </paths>
+      </rule>
+      <rule>The <strong>Implementer core execution guide</strong> (<code>content/Uncategorized/Vault organization &amp; content completion guide.md</code>) controls execution order, scope boundaries, file operations, and roadmap state. This style guide controls writing style, presentation, and formatting.</rule>
+    </rules>
+  </authority_and_scope>
+
+  <writing_style_and_anti_ai_guidelines>
+
+    <plain_factual_and_direct_prose name="Factual &amp; No-Fluff">
+      <rules>
+        <rule>Write in a plain, direct, practitioner-grade style.</rule>
+        <rule>State facts directly without fluff, dramatic narrative, pseudo-academic introductory filler, or artificial hype.</rule>
+        <rule>Keep sentences short, simple, and punchy (aim for 15–25 words per sentence).</rule>
+        <rule>Avoid fluff phrasing such as "In this section...", "It is important to remember...", "Note that...", or "As previously discussed...".</rule>
+        <rule>Focus purely on what the configuration is, how to detect it, how to exploit it, how to verify execution, and how to clean up.</rule>
+        <rule>❌ No text diagrams (if needed, only valid mermaid is accepted).</rule>
+      </rules>
+    </plain_factual_and_direct_prose>
+
+    <banned_ai_vocabulary_and_fluff_terms>
+      <rules>
+        <rule>Never use pseudo-academic AI filler words or overused AI buzzwords.</rule>
+      </rules>
+      <banned_word_list>
+        <term>
+          <banned>Mechanics</banned>
+          <details>Do NOT use "Underlying mechanics", "Mechanics of...", or "Conceptual grounding &amp; mechanics" as headings or introductory fluff.</details>
+          <use_instead>How [Vector] works</use_instead>
+          <use_instead>Security model</use_instead>
+        </term>
+        <term>
+          <banned>Under the hood</banned>
+          <banned>In a nutshell</banned>
+          <banned>At its core</banned>
+        </term>
+        <term>
+          <banned>Crucial</banned>
+          <banned>Essential</banned>
+          <banned>Pivotal</banned>
+          <banned>Vital</banned>
+        </term>
+        <term>
+          <banned>Leverage</banned>
+          <use_instead>use</use_instead>
+          <use_instead>abuse</use_instead>
+          <use_instead>exploit</use_instead>
+        </term>
+        <term>
+          <banned>Utilize</banned>
+          <use_instead>use</use_instead>
+        </term>
+        <term>
+          <banned>Seamlessly</banned>
+          <banned>Robust</banned>
+          <banned>Comprehensive</banned>
+          <banned>Delve</banned>
+          <banned>Harness</banned>
+        </term>
+        <term>
+          <banned>Basically</banned>
+          <banned>Simply</banned>
+          <banned>Obviously</banned>
+          <banned>Clearly</banned>
+        </term>
+      </banned_word_list>
+    </banned_ai_vocabulary_and_fluff_terms>
+
+    <banned_adverbial_participle_clauses name="-ing tails">
+      <priority>VERY IMPORTANT</priority>
+      <directive>USE DIRECT CAUSE-AND-EFFECT SENTENCES OR CRISP BULLET POINTS</directive>
+
+      <rules>
+        <rule>WHAT YOU MUST NOT DO: append dangling participle phrases (<code>-ing</code> clauses) to the end of sentences to explain results. This creates repetitive, robotic, and unnatural text.</rule>
+        <rule>
+          <strong>NEVER</strong> end explanatory sentences with dangling participles such as:
+          <bad_examples>
+            <example>❌ "...allowing an attacker to escalate privileges."</example>
+            <example>❌ "...leading to arbitrary code execution."</example>
+            <example>❌ "...resulting in a system crash."</example>
+            <example>❌ "...enabling unauthenticated user access."</example>
+            <example>❌ "...granting SYSTEM privileges."</example>
+          </bad_examples>
+        </rule>
+        <rule>
+          <strong>Rephrase into direct cause-and-effect sentences or crisp bullet points</strong>:
+          <examples>
+            <pair>
+              <bad>❌ Bad: "The service executes binary files with SYSTEM privileges, allowing you to escalate privileges."</bad>
+              <good>✅ Good: "The service executes as <code>SYSTEM</code>. Replacing the binary gives you <code>SYSTEM</code> code execution."</good>
+            </pair>
+            <pair>
+              <bad>❌ Bad: "Run <code>whoami /all</code>, displaying the active user SID and privileges."</bad>
+              <good>✅ Good: "Run <code>whoami /all</code> to display your SID, group memberships, and assigned privileges."</good>
+            </pair>
+          </examples>
+        </rule>
+      </rules>
+    </banned_adverbial_participle_clauses>
+
+    <mandatory_shortcuts>
+      <rule>Use "can't", "don't", and other shortcuts where applicable instead of "cannot", "do not" (except where emphasize is needed), even though the overall style is formal.</rule>
+    </mandatory_shortcuts>
+
+    <zero_conversational_fluff>
+      <rules>
+        <rule>Eliminate all meta-commentary, introductory greetings, marketing language, dramatic phrasing, soft conclusions, and generic closing statements.</rule>
+        <rule>
+          Forbidden introductory and closing patterns:
+          <forbidden_patterns>
+            <pattern>❌ "In this guide, we will explore..."</pattern>
+            <pattern>❌ "Welcome to my notes on..."</pattern>
+            <pattern>❌ "Hope this helps with your exam prep!"</pattern>
+            <pattern>❌ "Summary:" (when used as generic closing filler)</pattern>
+            <pattern>❌ "As you can see..."</pattern>
+          </forbidden_patterns>
+        </rule>
+        <rule>Start immediately with frontmatter for new notes, followed by the main document title and scope callout.</rule>
+      </rules>
+    </zero_conversational_fluff>
+
+  </writing_style_and_anti_ai_guidelines>
+
+  <capitalization_headings_and_section_naming>
+
+    <sentence_case>
+      <rules>
+        <rule>Use sentence case for all headings, subheadings, and note titles: only the first word is capitalized unless a proper noun, product name, protocol, or technical acronym requires official capitalization.</rule>
+      </rules>
+      <examples>
+        <example>## Operational breakdown</example>
+        <example>## References and further reading</example>
+        <example>## Attacking Active Directory ACLs</example>
+        <example>Automated &amp; manual Windows enumeration.md</example>
+      </examples>
+    </sentence_case>
+
+    <active_gerund_headings_for_procedural_sections>
+      <rule>Use action-oriented gerund headings (<code>-ing</code> forms) for procedural and methodological sections:</rule>
+      <examples>
+        <example>
+          <preferred>## Enumerating unquoted service paths</preferred>
+          <not>## Enumeration of unquoted service paths</not>
+        </example>
+        <example>
+          <preferred>## Exploiting weak service DACLs</preferred>
+          <not>## Weak service DACL exploitation</not>
+        </example>
+        <example>
+          <preferred>## Verifying elevated access</preferred>
+          <not>## Privilege verification</not>
+        </example>
+        <example>
+          <preferred>## Cleaning up payload files</preferred>
+          <not>## Cleanup</not>
+        </example>
+        <example>
+          <preferred>## Understanding [Concept]</preferred>
+          <preferred>## How [Concept] works</preferred>
+          <not>## Mechanics of [Concept]</not>
+        </example>
+      </examples>
+    </active_gerund_headings_for_procedural_sections>
+
+  </capitalization_headings_and_section_naming>
+
+  <reader_voice_and_perspective>
+    <rules>
+      <rule>Address the reader directly as <strong>"you"</strong> for all procedural instructions, conditions, and checks.</rule>
+      <rule><strong>Never call the reader "the attacker".</strong></rule>
+      <rule>
+        Use generic role nouns only when describing a systemic security context on the machine:
+        <allowed_roles>
+          <role>"a low-privileged user"</role>
+          <role>"a privileged service account"</role>
+          <role>"an administrator session"</role>
+        </allowed_roles>
+      </rule>
+      <rule>Do not mix "you", "the attacker", and "low-privileged user" interchangeably when referring to the same participant in a single scenario.</rule>
+      <rule>Use explicit targets: "the target system", "the target service", "the target executable" (avoid ambiguous bare "target").</rule>
+    </rules>
+  </reader_voice_and_perspective>
+
+  <document_structure_and_gold_standard_architecture>
+    <rule>Notes should follow this logical structure:</rule>
+
+    <logical_structure><![CDATA[
+[YAML Frontmatter]  <-- NEW notes only; never edit frontmatter in EXISTING notes
+  │
+  ├── Document title (H2 sentence case)
+  ├── Actionable checklist (- [ ] task boxes)
+  ├── Scope / High-level summary (> [!abstract]+ Scope)
+  ├── How [Concept] works (Brief factual explanation, no "Mechanics" fluff)
+  ├── Methodological breakdown
+  │    ├── ## Enumerating [Vector]
+  │    ├── ## Exploiting [Vector]
+  │    ├── Windows command blocks (```powershell / ```cmd)
+  │    ├── Linux command blocks (```bash)
+  │    ├── Parameter & flag tables
+  │    └── Raw tool outputs (>[!example]-)
+  └── References and further reading (## References and further reading)
+]]></logical_structure>
+
+    <rules>
+      <rule>Add a checklist only when the note describes an actionable sequential workflow. If added, place it after the first heading, separated with delimiters (<code>---</code>) and not section headers.</rule>
+      <rule>Do not fabricate raw example command output.</rule>
+    </rules>
+
+    <good_scope_callout_examples>
+      <example><strong>Scope</strong>: Local Windows privilege escalation and persistence via misconfigured autorun registry keys, startup directories, scheduled tasks, Winlogon configurations, PowerShell profiles, Command Processor <code>AutoRun</code>, WMI event subscriptions, and advanced auto-start locations.</example>
+      <example><strong>Scope</strong>: Access tokens; primary, impersonation, and delegation tokens; impersonation levels; token privileges relevant to privilege escalation.</example>
+    </good_scope_callout_examples>
+  </document_structure_and_gold_standard_architecture>
+
+  <bullets_procedures_and_terminology>
+
+    <bullet_formatting>
+      <rules>
+        <rule>Use bullets (<code>-</code>) for facts, conditions, individual checks, alternative commands, and explanatory observations.</rule>
+        <rule>Use numbered lists (<code>1.</code>, <code>2.</code>) only when steps form a strict sequential procedure.</rule>
+        <rule>A bullet line that directly introduces a command block should end with a colon.</rule>
+        <rule>Explanatory paragraphs and bullet sentences end with a period.</rule>
+        <rule>Use tabs for nested bullet indentation.</rule>
+      </rules>
+    </bullet_formatting>
+
+    <precise_terminology>
+      <terms>
+        <term>
+          <name>executable / executable file</name>
+          <definition>the file on disk.</definition>
+        </term>
+        <term>
+          <name>service executable path</name>
+          <definition>the configured path to the binary.</definition>
+        </term>
+        <term>
+          <name>binPath</name>
+          <definition>Windows SCM service binary path property.</definition>
+        </term>
+        <term>
+          <name>payload</name>
+          <definition>code or file used to demonstrate execution; do not call every binary or script a payload.</definition>
+        </term>
+        <term>
+          <name>replacement executable</name>
+          <definition>file substituted in place of a legitimate binary.</definition>
+        </term>
+        <term>
+          <name>SYSTEM / NT AUTHORITY\SYSTEM</name>
+          <definition>operating system security context.</definition>
+        </term>
+        <term>
+          <name>permissions on</name>
+          <definition>preferred over "permissions over".</definition>
+        </term>
+        <term>
+          <name>write access to</name>
+          <definition>preferred over "write access over".</definition>
+        </term>
+        <term>
+          <name>listener IP / listener address</name>
+          <definition>address receiving callbacks (keep placeholder <code>&lt;attacker_ip_address&gt;</code> in command blocks, but refer to it as listener IP/address in prose).</definition>
+        </term>
+      </terms>
+    </precise_terminology>
+
+  </bullets_procedures_and_terminology>
+
+  <obsidian_wikilinks_and_cross_references>
+    <rules>
+      <rule>Create Obsidian wikilinks for internal vault references, e.g. <code>[[🛠️ Pass-the-Hash]]</code>, <code>[[◯ RBCD attacks]]</code>, <code>[[Kerberos]]</code>.</rule>
+      <rule><strong>NEVER enclose wikilinks in backticks.</strong> Write [[Kerberos]], NOT <code>[[Kerberos]]</code>.</rule>
+      <rule>All internal vault references MUST use wikilinks (<code>[[...]]</code>). Markdown links (<code>[text](url)</code>) are reserved strictly for external URLs.</rule>
+      <rule>Do not check or validate whether wikilink target files exist on disk; the human author manages link validation.</rule>
+    </rules>
+  </obsidian_wikilinks_and_cross_references>
+
+  <obsidian_callouts>
+    <directive>Use callouts for distinct contextual purposes and preserve fold operators:</directive>
+
+    <callouts>
+      <callout>
+        <type>[!abstract]</type>
+        <fold_behavior>Expanded (+)</fold_behavior>
+        <intended_usage>Scope, document objectives, high-level summaries</intended_usage>
+        <canonical_form>&gt;[!abstract]+ Scope</canonical_form>
+      </callout>
+      <callout>
+        <type>[!important]</type>
+        <fold_behavior>Default or expanded</fold_behavior>
+        <intended_usage>Critical objectives, security boundaries, prerequisites</intended_usage>
+        <canonical_form>&gt;[!important] Objective: ...</canonical_form>
+      </callout>
+      <callout>
+        <type>[!note]</type>
+        <fold_behavior>Default or expanded</fold_behavior>
+        <intended_usage>Protocol details and cross-references</intended_usage>
+        <canonical_form>&gt;[!note] See [[Kerberos]].</canonical_form>
+      </callout>
+      <callout>
+        <type>[!tip]</type>
+        <fold_behavior>Expanded (+)</fold_behavior>
+        <intended_usage>Actionable verification, command tips, cleanup</intended_usage>
+        <canonical_form>&gt;[!tip]+ Verify membership:</canonical_form>
+      </callout>
+      <callout>
+        <type>[!warning]</type>
+        <fold_behavior>Default</fold_behavior>
+        <intended_usage>High-risk or destructive actions</intended_usage>
+        <canonical_form>&gt;[!warning] Resetting the password...</canonical_form>
+      </callout>
+      <callout>
+        <type>[!example]</type>
+        <fold_behavior>Collapsed (-)</fold_behavior>
+        <intended_usage>Existing raw logs and captured command output</intended_usage>
+        <canonical_form>&gt;[!example]- Raw output</canonical_form>
+      </callout>
+      <callout>
+        <type>[!info]</type>
+        <fold_behavior>Default</fold_behavior>
+        <intended_usage>Operational prerequisite conditions</intended_usage>
+        <canonical_form>&gt;[!info] Network access required.</canonical_form>
+      </callout>
+    </callouts>
+
+    <rules>
+      <rule>Verification steps belong inside <code>&gt;[!tip]+</code> callouts.</rule>
+      <rule>Cleanup instructions belong inside <code>&gt;[!tip]+</code> callouts (do NOT create <code>### Cleanup</code> headings).</rule>
+      <rule>Never fabricate example tool outputs inside callouts.</rule>
+    </rules>
+  </obsidian_callouts>
+
+  <code_blocks_syntax_highlighting_and_parameter_tables>
+    <rules>
+      <rule>Fenced code blocks must specify an explicit language identifier (<code>powershell</code>, <code>bash</code>, <code>cmd</code>, <code>python</code>, <code>c</code>, <code>yaml</code>).</rule>
+      <rule>Use <code>powershell</code> for PowerShell commands and general Windows CLI commands.</rule>
+      <rule>Keep commands clean and copy-pastable. Do not include shell prompts (such as <code>PS C:\&gt;</code>) inside general command blocks.</rule>
+      <rule>Do not put inline comment lines (<code># comment</code>) inside code blocks; explain commands in the prose immediately preceding or following the block.</rule>
+      <rule>For every non-trivial tool command, provide an explicit parameter breakdown table or structured list explaining the key flags.</rule>
+    </rules>
+
+    <parameter_breakdown_example>
+      <parameter>
+        <flag>-u</flag>
+        <value>jdoe</value>
+        <description>Specifies the domain username for authentication.</description>
+      </parameter>
+      <parameter>
+        <flag>-p</flag>
+        <value>'passwd123'</value>
+        <description>Specifies the plain-text password.</description>
+      </parameter>
+      <parameter>
+        <flag>-d</flag>
+        <value>example.com</value>
+        <description>Target Active Directory domain FQDN.</description>
+      </parameter>
+    </parameter_breakdown_example>
+
+    <standard_lab_parameters>
+      <parameter>
+        <name>Domain / FQDN</name>
+        <values>
+          <value>example.com</value>
+          <value>dc01.example.com</value>
+        </values>
+      </parameter>
+      <parameter>
+        <name>Target IP</name>
+        <value>10.10.11.5</value>
+      </parameter>
+      <parameter>
+        <name>Listener IP placeholder</name>
+        <value>&lt;attacker_ip_address&gt;</value>
+        <prose_reference>listener IP</prose_reference>
+        <prose_reference>listener address</prose_reference>
+      </parameter>
+      <parameter>
+        <name>Users</name>
+        <value context="first">jdoe</value>
+        <value context="second / target">rwade</value>
+      </parameter>
+      <parameter>
+        <name>Passwords</name>
+        <value>'passwd123'</value>
+        <value>'new_passwd123'</value>
+      </parameter>
+    </standard_lab_parameters>
+  </code_blocks_syntax_highlighting_and_parameter_tables>
+
+  <references_and_further_reading>
+    <rules>
+      <rule>End every note with the exact heading <code>## References and further reading</code>.</rule>
+      <rule>Include hyperlinked titles pointing to official source code or documentation:</rule>
+    </rules>
+
+    <example><![CDATA[
+## References and further reading
+
+- [`Overpass-the-Hash — The Hacker Recipes`](https://www.thehacker.recipes/ad/movement/kerberos/opth)
+- [`Abusing Active Directory ACLs/ACEs — HackTricks`](https://hacktricks.wiki/en/windows-hardening/active-directory-methodology/acl-persistence-abuse/index.html)
+- [`SpecterOps Blog`](https://posts.specterops.io/)
+]]></example>
+  </references_and_further_reading>
+
+  <formatting_summary_and_editing_checklist>
+    <directive>When writing or polishing notes, enforce this checklist:</directive>
+    <checklist>
+      <item>No conversational fluff, greetings, or meta-commentary.</item>
+      <item>No banned words (<code>Mechanics</code>, <code>under the hood</code>, <code>in a nutshell</code>, <code>crucial</code>, <code>leverage</code>, <code>utilize</code>, <code>delve</code>, <code>robust</code>).</item>
+      <item>No dangling participle clauses (<code>-ing</code> tails like "...allowing an attacker to...").</item>
+      <item>Sentence case for all headings and note titles.</item>
+      <item>Action-oriented gerund headings for procedure sections (<code>## Enumerating...</code>, <code>## Exploiting...</code>, <code>## Verifying...</code>).</item>
+      <item>Reader addressed consistently as "you" (never "the attacker").</item>
+      <item>Obsidian wikilinks <code>[[...]]</code> without backticks for internal references.</item>
+      <item>Code blocks with language tags (<code>powershell</code>, <code>bash</code>, <code>python</code>) and parameter breakdown tables.</item>
+      <item>Existing frontmatter untouched on existing files; new frontmatter added to new files.</item>
+    </checklist>
+  </formatting_summary_and_editing_checklist>
+
+</ai_style_and_formatting_guide>
+````

@@ -1,5 +1,6 @@
 ---
 created: 2026-05-02
+updated: 2026-09-20
 ---
 could you please generate useful notes for my article based on my PortSwigger lab solution walkthrough?
 

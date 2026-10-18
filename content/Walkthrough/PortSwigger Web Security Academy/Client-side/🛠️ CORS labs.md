@@ -1,6 +1,7 @@
 ---
 created: 2026-06-04
 aliases:
+updated: 2026-09-20
 ---
 
 | `#`  | Solved? | Name                                               | Date    | Notes      |

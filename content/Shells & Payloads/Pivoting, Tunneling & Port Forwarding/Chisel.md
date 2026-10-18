@@ -1,6 +1,6 @@
 ---
 created: 2026-09-05
-updated: 2026-09-12
+updated: 2026-10-06
 tags:
   - pivoting
 ---
@@ -119,7 +119,7 @@ chisel client 10.10.11.5:8080 53:172.16.5.19:53/udp
 - Reverse tunnels are useful in situations where the pivot can't accept arbitrary inbound connections, but can initiate outbound connections to your attacking machine.
 ---
 
-1. On your attacker machine, start the Chisel **server** in reverse mode:
+1. On your attacking machine, start the Chisel **server** in reverse mode:
 
 ```bash
 chisel server --reverse --port 8080 -v

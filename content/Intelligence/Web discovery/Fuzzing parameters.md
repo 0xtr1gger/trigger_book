@@ -1,6 +1,6 @@
 ---
 created: 2026-07-18
-updated: 2026-09-30
+updated: 2026-10-06
 tags:
   - web_hacking
   - intel
@@ -18,7 +18,7 @@ proofread: yes
 	- HTTP body parameters (`POST`, `PUT`, `PATCH`, e.g., `username=FUZZ&password=pass`)
 	- **HTTP headers** (e.g., `X-Forwarded-For: FUZZ`)
 	- Cookies
-     - HTTP path parameters (RESTful APIs, e.g., `/api/user/FUZZ`)
+    - HTTP path parameters (RESTful APIs, e.g., `/api/user/FUZZ`)
 
 - The general approach is as follows:
      1. Fuzz parameter names with a fixed, arbitrary value (e.g., `x` or `1`) to find parameters the application recognizes.
@@ -225,6 +225,15 @@ curl -s "http://example.com/admin?parameter=x"
 curl -I "http://example.com/admin?parameter=x"
 ```
 
-- Depending on the findings, test for vulnerabilities. Pay attention to [[🛠️ Injection vulnerabilities|injection vulnerabilities]] like SQL injection, OS command injection, and XSS; [[🛠️ Authentication and authorization vulnerabilities|authorization vulnerabilities]] such as IDOR; caching flaws like [[Web Cache Deception]] and [[🛠️ Web Cache Poisoning]]; information disclosure vulnerabilities, and others.
+- Depending on the findings, test for vulnerabilities. Pay attention to injection vulnerabilities like SQL injection, OS command injection, and XSS; [[🛠️ Authentication and authorization vulnerabilities|authorization vulnerabilities]] such as IDOR; caching flaws like [[Web Cache Deception]] and [[🛠️ Web Cache Poisoning]]; information disclosure vulnerabilities, and others.
 
 >[!note] See [[Web discovery and enumeration methodology]].
+
+## References and further reading
+
+- [`Fuzzing — OWASP`](https://community.owasp.org/Fuzzing)
+- [`Web fuzzing for hackers — Ayuob and Orwa Atyat, Intigriti`](https://www.intigriti.com/researchers/blog/hacking-tools/web-fuzzing-for-hackers)
+
+- `TODO`:
+	- Add `Param Miner`
+	- Make it not just "fuzzing" but also "enumeration"; it is more appropriate to what the article covers; rename to `Enumerating parameters`.
