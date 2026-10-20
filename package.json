@@ -95,7 +95,7 @@
     "globby": "^16.1.0",
     "hast-util-from-html": "^2.0.0",
     "hast-util-to-jsx-runtime": "^2.3.6",
-    "isomorphic-git": "^1.44.2",
+    "isomorphic-git": "^1.44.3",
     "lightningcss": "^1.31.1",
     "micromorph": "^0.4.5",
     "minimatch": "^10.1.1",
