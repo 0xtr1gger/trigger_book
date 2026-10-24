@@ -1,6 +1,6 @@
 ---
 created: 2026-08-15
-updated: 2026-10-11
+updated: 2026-10-20
 tags:
   - Windows
 status: complete
@@ -32,8 +32,6 @@ status: complete
 | **SSH**            | `22` (TCP)                        | SSH                                   | Interactive shell, command execution        | Local/domain user account                   | `ssh`, <br>`sftp`                                                            |
 
 - In most cases, you can authenticate with a plaintext password, an NT hash ([[Pass-the-Hash]]), or a Kerberos ticket ([[Pass-the-Ticket]]).
-
->[!note]+ **Related notes**: [[🛠️ NTLM]] · [[Kerberos]] 
 ## WinRM
 
 >**[Windows Remote Management (WinRM)](https://learn.microsoft.com/en-us/windows/win32/winrm/portal)** is the Microsoft implementation of the [WS-Management protocol](https://learn.microsoft.com/en-us/windows/win32/winrm/ws-management-protocol), a SOAP-based standard for remotely exchanging management information between Windows systems.
@@ -676,179 +674,10 @@ schtasks /delete /s 10.10.11.5 /u example\jdoe /p 'passwd123' /tn "AuditJob" /f
 | `/st` | Task start time in `HH:mm` format. |
 | `/f` | Force task creation or deletion without interactive confirmation prompts. |
 
+
 ## RDP
 
->**Remote Desktop Protocol (RDP)** is a Microsoft-proprietary protocol that provides an interactive graphical session remotely.
-
-- RDP listens on TCP and UDP port `3389`.
-- It is based on the ITU-T T.128 application-sharing standard; the protocol multiplexes display, keyboard and mouse input, clipboard, audio, and drive redirection over separate virtual channels.
-- Modern RDP implementations use TLS and **Network Level Authentication (NLA)**, which authenticates the user through CredSSP before a full session is established.
-
-- Modern sessions are secured with TLS and **Network Level Authentication (NLA)**, which authenticates the user through [CredSSP](https://learn.microsoft.com/en-us/windows/win32/secauthn/credential-security-support-provider) before a full session is established.
-
->[!important] The **`Remote Desktop Users` group** is a built-in Windows security group that grants members the right to **log on remotely** via **Remote Desktop Protocol (RDP)**.
-
->[!note] By default, only members of the **`Administrators`** and **`Remote Desktop Users`** groups can log on through RDP.
-### Connecting with `xfreerdp`
-
-- To connect to an RDP server from a Linux system, you can use [`xfreerdp`](https://www.freerdp.com/) or [`Remmina`](https://remmina.org/) (GUI). Alternatively, you can use the older [`rdesktop`](http://www.rdesktop.org/).
-
->[!important] Windows supports RDP natively. Double-clicking on an `.rdp` file in File Explorer starts up an RDP connection. From the command line, you can use [`mstsc`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/mstsc).
-
-
->[!note] See [`xfreerdp`](https://man.archlinux.org/man/extra/freerdp/xfreerdp3.1.en) and [`rdesktop`](https://man.archlinux.org/man/rdesktop.1) man pages. 
-### `xfreerdp`
-
-- Connect to a Windows system:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123'
-```
-
-- Connect with audio output redirection:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /sound:sys:alsa
-```
-
-- Enable dynamic screen resolution:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /dynamic-resolution
-```
-
-- Enable clipboard redirection:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' +clipboard
-```
-
-- Ignore certificate validation:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /cert:ignore
-```
-
-- Enable dynamic resolution and clipboard redirection, and ignore certificate validation:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /dynamic-resolution /cert:ignore +clipboard
-```
-
-- Connect using Pass-the-Hash (in Restricted Admin Mode):
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /pth:2b576acfd5e0c865136732c44b49b6b1 /restricted-admin /cert:ignore
-```
-
-- Mount a local Linux directory as a mapped share in the remote session:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /drive:tools,/opt/tools /cert:ignore
-```
-
-
-- Test credentials against Network Level Authentication (NLA) without opening a graphical window:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /d:example.com +auth-only /cert:ignore
-```
-
-| Option                | Description                                                                                                                                          |
-| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/v:`                 | Target server IP address, hostname, or URL.                                                                                                          |
-| `/u:`                 | Username for authentication.                                                                                                                         |
-| `/p:`                 | Password (alternatively, use `/from-stdin`).                                                                                                         |
-| `/from-stdin`         | Read credentials from `stdin`. With `/from-stdin:force`, the prompt appears before the connection; otherwise, it appears when requested by the server. |
-| `/d:`                 | Domain name.                                                                                                                                         |
-| `/pth:`               | NT hash to use for authentication (Pass-the-Hash); format: `LM_hash:NT_hash`.                                                                        |
-| `/restricted-admin`   | Connect in Restricted Admin Mode (prevents caching plaintext credentials in remote LSASS memory).                                                    |
-| `/dynamic-resolution` | Update resolution on window resize.                                                                                                                  |
-| `+clipboard`          | Enable bidirectional clipboard redirection.                                                                                                          |
-| `/drive:`             | Redirect a local directory as a mapped network drive (`<name>,<path>`).                                                                              |
-| `/cert:ignore`        | Bypass TLS certificate validation errors.                                                                                                            |
-| `+auth-only`          | Test authentication against NLA without opening a graphical window.                                                                                  |
-| `/size:`              | Remote desktop dimensions (`<width>x<height>`).                                                                                                      |
-
-- Display & window:
-
-| Option                                     | Description                                      |
-| ------------------------------------------ | ------------------------------------------------ |
-| `/f`                                       | Full screen mode (toggle with `Ctrl+Alt+Enter`). |
-| `/w:width`                                 | Screen width (default: `1024`).                  |
-| `/h:height`                                | Screen height (default `768`).                   |
-| `/size:<width>x<height>`<br>or `/size:50%` | Screen size (e.g. `1024x768` or percent).        |
-| `/smart-sizing`                            | Scale remote desktop to window size.             |
-| `/scale:100\|140\|180`                     | Display scaling factor.                          |
-| `/dynamic-resolution`                      | Update resolution on window resize.              |
-| `/multimon[:force]`                        | Use multiple monitors.                           |
-| `/workarea`                                | Use available work area.                         |
-| `/window-position:xxy`                     | Set initial window position.                     |
-
-- Redirection (drives, clipboard, etc.):
-
-| Option                           | Description                                                       |
-| -------------------------------- | ----------------------------------------------------------------- |
-| `+clipboard`                     | Enable clipboard redirection (use `-clipboard` to disable).       |
-| `/drive:<name>,<path>`           | Redirect local directory as share (e.g. `/drive:home,/home/user`) |
-| `+drives`                        | Redirect all local drives/mount points.                           |
-| `/sound` or `/audio`             | Audio output redirection (e.g., `/sound:sys:alsa`).               |
-| `/microphone` or `/mic`          | Microphone (input) redirection.                                   |
-| `/usb:id:vid:pid` or `/usb:auto` | USB device redirection.                                           |
-| `/smartcard`                     | Smartcard redirection.                                            |
-
-### Connecting with native Windows tools
-
-- [`mstsc.exe`](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/mstsc) (Microsoft Terminal Services Client) is the built-in Windows RDP client.
-
----
-
-- Connect using Remote Desktop Connection in Restricted Admin Mode:
-
-```powershell
-mstsc.exe /v:10.10.11.5 /restrictedAdmin
-```
-
-- Connect directly to the console or administrative session:
-
-```powershell
-mstsc.exe /v:10.10.11.5 /admin
-```
-
-- Start Remote Desktop in full-screen mode:
-
-```powershell
-mstsc.exe /v:10.10.11.5 /f
-```
-
-| Option | Description |
-| :--- | :--- |
-| `/v:<server>` | Remote computer and optional port to connect to. |
-| `/restrictedAdmin` | Connect in Restricted Admin Mode to prevent credential caching in remote LSASS memory. |
-| `/admin` | Connect to the console session for administering the server. |
-| `/f` | Start Remote Desktop in full-screen mode. |
-| `/w:<width>` | Width of the Remote Desktop window. |
-| `/h:<height>` | Height of the Remote Desktop window. |
-| `/edit` | Open the specified `.rdp` connection file for editing. |
-
-- Enable the RDP listener in the registry:
-
-```powershell
-reg add "HKLM\System\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
-```
-
-- Enable Restricted Admin Mode in the registry:
-
-```powershell
-reg add "HKLM\System\CurrentControlSet\Control\Lsa" /v DisableRestrictedAdmin /t REG_DWORD /d 0 /f
-```
-
-- Enable Remote Desktop firewall rules:
-
-```powershell
-netsh advfirewall firewall set rule group="remote desktop" new enable=Yes
-```
-
+>[!note] See [[Connecting via RDP]] and [[RDP]].
 ## MSSQL instances
 
 >**Microsoft SQL Server (MSSQL)** is a relational database management system (RDBMS) developed by Microsoft. Clients communicate with SQL Server using the **Tabular Data Stream (TDS)** application-layer protocol.

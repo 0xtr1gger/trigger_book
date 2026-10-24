@@ -1,6 +1,6 @@
 ---
 created: 2026-08-03
-updated: 2026-10-19
+updated: 2026-10-21
 tags:
   - AD
   - AD_attacks
@@ -12,18 +12,18 @@ tags:
 
 - At the beginning of Kerberos authentication, a client requests a **TGT** (Ticket-Granting Ticket) from the KDC (Key Distribution Center) by sending an Authentication Service Request (`AS-REQ`). This request is sent before the client has any credentials in the current session.
 - The `AS-REQ` typically includes **pre-authentication data**: a timestamp encrypted with a key derived from the client's password. This key is called the client's **long-term key**.
-- The AS decrypts the timestamp using the corresponding key it stores for the account and verifies that it falls within the acceptable clock skews (5 minutes by default). This demonstrates that the client possesses the account's long-term key without transmitting the key itself.
+- The AS decrypts the timestamp using the corresponding key it stores for the account and verifies that it falls within the acceptable clock skews (5 minutes by default). This lets the KDC verify that the client knows the account's long-term key without transmitting the key itself.
 
 >[!note] See [[Kerberos#`1.` AS exchange (`KRB_AS_REQ` / `KRB_AS_REP`)]].
 
 - Kerberos pre-authentication can be disabled for an account through the `DONT_REQUIRE_PREAUTH` flag in the `userAccountControl` attribute. When this flag is set, the AS can issue an `AS-REP` without first verifying that the requester actually holds the client's long-term key.
-- Therefore, you can request an `AS-REP` for an account with pre-authentication disabled without knowing the account's password or long-term key.
+- Therefore, you can request an `AS-REP` for an account with pre-authentication disabled without knowing its password or long-term key.
 ---
-- Part of `AS-REP` — the portion intended for the client — is encrypted with the client's long-term key. If you capture the response, you can extract this material and attempt to **crack the password offline**: take a candidate password, derive the corresponding Kerberos key, and attempt to decrypt the captured data. A successful decryption identifies the correct candidate password and, consequently, the corresponding long-term key. 
+- Part of `AS-REP` — the portion intended for the client — is encrypted with the client's long-term key. If you capture the response, you can extract this material and attempt to **crack the password offline**: take a candidate password, derive the corresponding Kerberos key, and attempt to decrypt the captured data. If decryption succeeds, the candidate password is correct.
 
 > **`AS-REP` roasting** is a Kerberos attack in which an attacker requests an `AS-REP` (Authentication Service Response) for a domain account with pre-authentication disabled and uses the returned encrypted material to attempt offline password cracking.
 
->[!note] The traffic generated during the roasting consists of standard `AS-REQ` requests — generating Event `4768` (A Kerberos authentication ticket was requested) on the Domain Controller, but no failed logons (`4625`).
+>[!note] The traffic generated during `AS-REP` roasting consists of standard `AS-REQ` requests and generates events `4768` (A Kerberos authentication ticket was requested) on the Domain Controller, but no failed logons (`4625`).
 
 >[!note] See [`Use the UserAccountControl flags to manipulate user account properties — Microsoft Learn`](https://learn.microsoft.com/en-us/troubleshoot/windows-server/active-directory/useraccountcontrol-manipulate-account-properties).
 
@@ -35,9 +35,10 @@ tags:
 
 #### `GetNPUsers.py`
 
-- [`GetNPUsers.py`](https://github.com/fortra/impacket/blob/master/examples/GetNPUsers.py) from Impacket can request `AS-REP`s for accounts with Kerberos pre-authentication disabled **both with and without valid domain credentials**. 
+- [`GetNPUsers.py`](https://github.com/fortra/impacket/blob/master/examples/GetNPUsers.py) from Impacket can request `AS-REP`s for accounts with Kerberos pre-authentication disabled, even if you don't have valid domain credentials.
 - If credentials are provided, the tool can pull target domain accounts automatically; otherwise you must submit a list of usernames. 
-- `GetNPUsers.py` checks whether `DONT_REQUIRE_PREAUTH` is set for each target account, and if so, performs the `AS-REP` roasting attack, i.e., requests `AS-REP`s.
+- `GetNPUsers.py` checks whether `DONT_REQUIRE_PREAUTH` is set for each target account, and if so, requests `AS-REP`s. 
+
 ---
 
 - Perform `AS-REP` roasting without valid domain credentials:
@@ -172,7 +173,8 @@ Get-DomainUser -UACFilter DONT_REQ_PREAUTH
 .\Rubeus.exe preauthscan /users:usernames.txt 
 ```
 
->[!example]-
+> [!example]-
+> 
 > ```powershell
 > .\Rubeus.exe asreproast /stats /nowrap
 > ```
@@ -259,6 +261,7 @@ Get-DomainUser -UACFilter DONT_REQ_PREAUTH
 > | `/des`                  | Request DES-encrypted `AS-REP`s (legacy environments).   |
 
 > [!example]-
+> 
 > ```powershell
 > PS C:\Tools> .\Rubeus.exe asreproast /nowrap
 > ```
@@ -287,7 +290,7 @@ Get-DomainUser -UACFilter DONT_REQ_PREAUTH
 
 ## Cracking `AS-REP` hashes
 
-- `AS-REP` hashes can be cracked offline using Hashcat or JohnTheRipper.
+- You can crack `AS-REP` hashes with Hashcat or JohnTheRipper.
 - The encryption type (`enctype`) used in the `AS-REP` determines how fast the user's password can be recovered, depending on the cryptographic algorithms in use.
 
 | Encryption type (`enctype`) | Value         | Hashcat mode | JtR format  | Description                                                                          |
@@ -344,6 +347,7 @@ john --format=krb5asrep AS-REP_hashes.txt --show
 ```
 
 > [!example]-
+> 
 > ```bash
 > john --format=krb5asrep --wordlist=/usr/share/wordlists/rockyou.txt AS-REP_hashes.txt
 > ```
@@ -380,18 +384,17 @@ nxc winrm 10.10.11.5 -u 'jdoe' -p 'passwd123'
 
 - Standard `AS-REP` roasting requires the target account to have `DONT_REQUIRE_PREAUTH` set.
 - A MitM variant **removes this prerequisite by capturing legitimate `AS-REP`s off the wire** instead of requesting them from the KDC. Because the `enc-part` of every `AS-REP` is encrypted with the account's long-term key regardless of whether pre-authentication was performed, a captured `AS-REP` is just as crackable as one obtained from a pre-auth-disabled account.
-- The result: **every user who authenticates on the monitored segment becomes roastable**, not only the accounts flagged with `DONT_REQUIRE_PREAUTH`.
+- As a result, **every user who authenticates on the segment where you can capture traffic becomes susceptible to `AS-REP` roasting**, even if they do have Kerberos pre-authentication enforced (`DONT_REQUIRE_PREAUTH` is **not** set).
 
 ---
 
-- To capture `AS-REP`s you must sit in-path for Kerberos traffic (TCP/UDP port `88`) between the clients and the Domain Controller. On a switched LAN this is normally achieved with **ARP spoofing**; rogue DHCPv6 (IPv6 takeover) can also place you in-path.
-- The `AS-REQ`/`AS-REP` exchange happens when a client first authenticates to the domain in a session — logon, unlock, or ticket renewal — so capture is **opportunistic** rather than on-demand, which limits its reliability compared to standard `AS-REP` roasting.
-
-> [!warning] Name-resolution poisoning tools such as `Responder` and `Inveigh`, and the `mitm6` + `ntlmrelayx` chain, capture **NetNTLM** material or relay **NTLM** authentication — they do **not** capture Kerberos `AS-REP`s (see [[#mitm6 and NTLM relay]] below). For `AS-REP` capture, use a Kerberos-aware interceptor such as `ASRepCatcher`.
+- To capture `AS-REP`s you must be able to eavesdrop Kerberos traffic (TCP/UDP port `88`) between the clients and the Domain Controller.
+- On a switched LAN this can be achieved with **ARP spoofing** (see [[🛠️ All paths to MitM]]).
+- The `AS-REQ`/`AS-REP` exchange happens when a client first authenticates to the domain in a session (logon, unlock, or ticket renewal) so capture is **opportunistic** rather than on-demand, which limits its reliability compared to standard `AS-REP` roasting.
 
 ### `ASRepCatcher`
 
-- [`ASRepCatcher`](https://github.com/Yaxxine7/ASRepCatcher) performs the MitM `AS-REP` roast end to end: it ARP-spoofs between the clients and the Domain Controller, intercepts the Kerberos exchange, and writes the captured `AS-REP`s in Hashcat/JtR format. It needs no domain credentials and no pre-auth-disabled accounts.
+- [`ASRepCatcher`](https://github.com/Yaxxine7/ASRepCatcher) uses ARP spoofing to capture `AS-REP` messages, intercepts Kerberos exchanges, and outputs `AS-REP`s in a format Hashcat/JtR can work with. It works even if you don't have valid domain credentials, but you must be positioned in the target network segment. 
 - Install it:
 
 ```bash
@@ -433,13 +436,14 @@ sudo ASRepCatcher relay -dc 10.10.11.5 -t 10.10.11.25,10.10.11.26 -outfile AS-RE
 
 - Crack the captured hashes as described in [[#Cracking AS-REP hashes]]; RC4 captures use Hashcat mode `18200`.
 
-> [!warning] Modern domains increasingly disable RC4. When the DC's policy forbids it, the forced-downgrade `AS-REQ` is rejected with `KDC_ERR_ETYPE_NOTSUPP` (error `0x12`) and relay mode yields no RC4 hash. Captured AES `AS-REP`s (`$krb5asrep$17$`/`$18$`) are still crackable, only far slower (modes `19800`/`19900`).
+> [!warning] Modern domains increasingly disable RC4. When the DC's policy forbids it, the forced-downgrade `AS-REQ` is rejected with `KDC_ERR_ETYPE_NOTSUPP` (error `0x12`). Captured AES `AS-REP`s (`$krb5asrep$17$`/`$18$`) can still be cracked, only far slower (modes `19800`/`19900`).
 
-> [!note] The RC4 downgrade is most effective against legacy clients (Windows 7 / Server 2008 R2 and earlier) and non-Windows Kerberos implementations. Current Windows clients and AES-only domains limit its usefulness.
+> [!note] The RC4 downgrade is mostly effective against legacy clients (Windows 7 / Server 2008 R2 and earlier) and non-Windows Kerberos implementations. Current Windows clients and AES-only domains limit its usefulness.
 
 ### Capturing `AS-REQ` pre-authentication
 
-- A related technique targets the **`AS-REQ`** instead of the `AS-REP`. With pre-authentication enabled, the client sends a timestamp encrypted with its long-term key in the `PA-ENC-TIMESTAMP` field; capturing it enables the same offline password attack. This yields a distinct hash — `$krb5pa$` (Hashcat mode `7500`) — not an `AS-REP` hash.
+- A related technique targets the **`AS-REQ`** instead of the `AS-REP`. With pre-authentication enabled, the client sends a timestamp encrypted with its long-term key in the `PA-ENC-TIMESTAMP` field, so it is as susceptible to password cracking attacks.
+- capturing it enables the same offline password attack. This yields a distinct hash — `$krb5pa$` (Hashcat mode `7500`) — not an `AS-REP` hash.
 - Extract it from live traffic or a packet capture with [`Pcredz`](https://github.com/lgandx/PCredz), which writes the material in crackable form:
 
 ```bash
@@ -451,24 +455,6 @@ sudo Pcredz -i eth0 -v
 ```bash
 hashcat -m 7500 -a 0 krb5pa_hashes.txt /usr/share/wordlists/rockyou.txt
 ```
-
-### `mitm6` and NTLM relay
-
-> [!warning] The `mitm6` + `ntlmrelayx` chain is frequently confused with `AS-REP` capture, but it is an **NTLM-relay** attack and never touches Kerberos `AS-REP`s — `ntlmrelayx` has no Kerberos-capture option. It is described here only to clear up that confusion; it is a different attack, not a way to obtain `AS-REP` hashes.
-
-- [`mitm6`](https://github.com/dirkjanm/mitm6) abuses the fact that Windows enables IPv6 by default and prefers it over IPv4. Even on IPv4-only networks, Windows hosts periodically broadcast **DHCPv6** solicitations.
-- `mitm6` answers those solicitations with rogue DHCPv6 replies that assign the victim a link-local IPv6 address and set the **attacker's host as the victim's primary DNS server**. Because Windows prefers IPv6 DNS, the victim then sends its DNS queries to the attacker, who selectively answers them — for example resolving `WPAD` to the attacker — to pull the victim's traffic through the attacker's host.
-- Paired with Impacket's [`ntlmrelayx.py`](https://github.com/fortra/impacket/blob/master/examples/ntlmrelayx.py), the captured NTLM authentication is relayed to a target service — commonly LDAP/LDAPS on the Domain Controller — to create a machine account or configure **resource-based constrained delegation (RBCD)** for privilege escalation:
-
-```bash
-sudo mitm6 -d example.com -i eth0
-```
-
-```bash
-sudo ntlmrelayx.py -6 -t ldaps://10.10.11.5 -wh fakewpad.example.com -l loot
-```
-
-> [!warning] Run `mitm6` only in short bursts. Acting as the IPv6 DNS server for a segment will eventually break name resolution for legitimate traffic across the network.
 
 ## References and further reading
 

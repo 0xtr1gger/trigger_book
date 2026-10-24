@@ -1,6 +1,6 @@
 ---
 created: 2026-09-21
-updated: 2026-10-11
+updated: 2026-10-20
 tags:
   - services_n_protocols
   - methodology
@@ -1315,25 +1315,7 @@ crowbar -b rdp -s 10.10.11.5/32 -u Administrator -C /usr/share/wordlists/rockyou
 
 ### Interacting with RDP
 
->[!note] See [[RDP#Connecting over RDP]] and [[Privileged remote access#RDP]].
-
-- Connect to a Windows host from Linux:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /cert:ignore
-```
-
-- Enable clipboard redirection and dynamic resolution:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /dynamic-resolution +clipboard /cert:ignore
-```
-
-- Authenticate with an NT hash in Restricted Admin Mode ([[Pass-the-Hash]]):
-
-```bash
-xfreerdp /v:10.10.11.5 /u:Administrator /pth:2b576acfd5e0c865136732c44b49b6b1 /restricted-admin /cert:ignore
-```
+>[!note] See [[Connecting via RDP]].
 
 ## WinRM
 

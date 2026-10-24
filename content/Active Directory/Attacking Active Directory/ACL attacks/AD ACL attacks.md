@@ -1,6 +1,6 @@
 ---
 created: 2026-08-04
-updated: 2026-10-18
+updated: 2026-10-24
 tags:
   - AD
   - AD_attacks
@@ -663,7 +663,7 @@ bloodyAD --host dc01.example.com -d example.com -u jdoe -p 'passwd123' add group
 #### `GenericAll` on a computer object
 
 - `GenericAll` on a computer account lets you write the delegation and key-credential attributes:
-	- Write `msDS-AllowedToActOnBehalfOfOtherIdentity` to configure [[◯ RBCD attacks]] and impersonate high-privileged users to the host. See [[#WriteProperty for msDS-AllowedToActOnBehalfOfOtherIdentity on a computer object]].
+	- Write `msDS-AllowedToActOnBehalfOfOtherIdentity` to configure [[Unconstrained delegation]] and impersonate high-privileged users to the host. See [[#WriteProperty for msDS-AllowedToActOnBehalfOfOtherIdentity on a computer object]].
 	- Write `msDS-KeyCredentialLink` to add shadow credentials and authenticate as the computer via `PKINIT`. See [[#WriteProperty for msDS-KeyCredentialLink on a user or computer object]].
 - If LAPS manages the host's local administrator password, full control also exposes the LAPS attributes. See [[#LAPS attribute abuse]].
 
@@ -710,7 +710,7 @@ dsacls "OU=Workstations,DC=example,DC=com" /I:T /G "EXAMPLE\jdoe:GA"
 	- **`WriteProperty` for `servicePrincipalName` on a user or computer object** -> modify SPNs. 
 	- **`WriteProperty` for `userAccountControl` on a user or computer object** -> alter user flags (disable Kerberos pre-authentication to subsequently perform [[AS-REP roasting]]).
 	- **`WriteProperty` for `member` on a group object** -> modify group membership.
-	- **`WriteProperty` for `msDS-AllowedToActOnBehalfOfOtherIdentity` on a computer object** -> [[◯ RBCD attacks]].
+	- **`WriteProperty` for `msDS-AllowedToActOnBehalfOfOtherIdentity` on a computer object** -> [[Unconstrained delegation]].
 	- **`WriteProperty` for `msDS-KeyCredentialLink` on a user or computer object** -> modify credentials.
 	- **`WriteProperty` for `scriptPath` on a user object** -> modify logon-script configuration.
 	- **`WriteProperty` for `profilePath` on a user object** -> modify profile configuration.
@@ -766,7 +766,7 @@ bloodyAD --host dc01.example.com -d example.com -u jdoe -p 'passwd123' add rbcd 
 rbcd.py -delegate-to 'TARGET$' -delegate-from 'ATTACKER$' -action write -dc-ip 10.10.11.5 'example.com/jdoe:passwd123'
 ```
 
->[!note] See [[◯ RBCD attacks]] for obtaining a controlled machine account and the S4U ticket-request chain.
+>[!note] See [[Unconstrained delegation]] for obtaining a controlled machine account and the S4U ticket-request chain.
 #### `WriteProperty` for `msDS-KeyCredentialLink` on a user or computer object
 
 - `WriteProperty` for `msDS-KeyCredentialLink` on a user or computer object allows you to **modify that object's credentials**.

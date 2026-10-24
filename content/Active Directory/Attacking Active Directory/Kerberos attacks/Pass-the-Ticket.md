@@ -1,12 +1,20 @@
 ---
 created: 2026-08-06
-updated: 2026-10-11
+updated: 2026-10-24
 tags:
   - AD
   - AD_attacks
   - Kerberos
 status: substantial
 ---
+// pass-the-ticket vs golden and silver ticket. are golden/silver tickets types of PtT?
+
+// you say "compromise a host configured for unconstrained delegation", but aren't user, service, and computer accounts configured for that rather than the host itself? in general, i'm a but confused with this. could you please go through the article, identify places that state that ambiguously, and clarify?
+additionally, i left some more comments for you, please take a look
+also fix writing where it's still needed to match my style
+
+
+- Instead of waiting for just any account to authenticate to the delegated host you've compromised, you may be able to force authentication with some additional techniques. One of such techniques is exploiting the **Printer Bug**.
 ## Pass-the-Ticket
 
 >In a **Pass-the-Ticket (PtT)** attack, an attacker extracts valid Kerberos authentication material — either **Ticket-Granting Tickets (TGTs)** or **Service Tickets (STs)** together with the associated session key — from a compromised system and reuses it to authenticate to domain services without knowing the user's password.

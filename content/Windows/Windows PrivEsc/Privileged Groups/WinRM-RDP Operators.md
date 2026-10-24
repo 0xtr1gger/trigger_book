@@ -1,6 +1,6 @@
 ---
 created: 2026-09-03
-updated: 2026-09-20
+updated: 2026-10-20
 tags:
   - Windows
   - Windows_PrivEsc
@@ -82,21 +82,9 @@ Invoke-Command -ComputerName 10.10.11.5 -ScriptBlock { Get-Process } -Credential
 
 ## Accessing RDP with Remote Desktop Users
 
-- Accounts in `Remote Desktop Users` can initiate interactive graphical sessions over RDP (TCP port `3389`).
+- Accounts in `Remote Desktop Users` can initiate interactive graphical sessions over RDP (TCP port `3389`), with a password or with [[Pass-the-Hash]] via Restricted Admin Mode.
 
-### Connecting via xfreerdp
-
-- Launch an RDP session from Linux using `xfreerdp`:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:'jdoe' /p:'passwd123' /dynamic-resolution /drive:share,/tmp
-```
-
-- Connect using Pass-the-Hash via restricted admin mode:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:'jdoe' /pth:'2b576acfd5e0c865136732c44b49b6b1' /pth
-```
+>[!note] See [[Connecting via RDP]].
 
 ### Enabling RDP and Restricted Admin Mode remotely
 

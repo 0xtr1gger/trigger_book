@@ -1,6 +1,6 @@
 ---
 created: 2026-09-04
-updated: 2026-09-20
+updated: 2026-10-21
 ---
 
 - https://quickref.me/ssh.html
@@ -8,3 +8,4 @@ updated: 2026-09-20
 ```bash
 ssh root@192.168.1.5 -p 2222
 ```
+

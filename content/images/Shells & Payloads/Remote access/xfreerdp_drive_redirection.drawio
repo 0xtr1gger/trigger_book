@@ -1,0 +1,39 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="vIYZaTGvuYwUy_zy9Xi1">
+    <mxGraphModel dx="617" dy="1220" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Dq1kjeO4wbuGKLS_H0h0-1" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=25;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;" value="/drive:" vertex="1">
+          <mxGeometry height="60" width="120" x="120" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="Dq1kjeO4wbuGKLS_H0h0-2" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=25;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;fontColor=light-dark(#000000,#CC0000);" value="&lt;span style=&quot;color: light-dark(rgb(0, 0, 0), rgb(153, 204, 255));&quot;&gt;tools&lt;/span&gt;&lt;span style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;,&lt;/span&gt;/home/user/tools" vertex="1">
+          <mxGeometry height="60" width="345" x="230" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="Dq1kjeO4wbuGKLS_H0h0-22" edge="1" parent="1" source="Dq1kjeO4wbuGKLS_H0h0-7" style="edgeStyle=orthogonalEdgeStyle;shape=connector;curved=1;rounded=0;curveGeometry=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;strokeColor=default;strokeWidth=2;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=default;startSize=8;endArrow=blockThin;endFill=0;endSize=8;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Dq1kjeO4wbuGKLS_H0h0-7" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=20;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;fontColor=light-dark(#000000,#FFFFFF);gradientColor=none;" value="&lt;span style=&quot;&quot;&gt;share name&lt;/span&gt;" vertex="1">
+          <mxGeometry height="50" width="130" x="310" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="Dq1kjeO4wbuGKLS_H0h0-12" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=20;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;fontColor=light-dark(#000000,#FFFFFF);gradientColor=none;" value="&lt;span style=&quot;&quot;&gt;local path&lt;/span&gt;" vertex="1">
+          <mxGeometry height="50" width="130" x="460" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="Dq1kjeO4wbuGKLS_H0h0-14" edge="1" parent="1" source="Dq1kjeO4wbuGKLS_H0h0-12" style="edgeStyle=orthogonalEdgeStyle;shape=connector;curved=1;rounded=0;curveGeometry=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.602;entryY=1.075;entryDx=0;entryDy=0;entryPerimeter=0;strokeColor=default;strokeWidth=2;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=default;startSize=8;endArrow=blockThin;endFill=0;endSize=8;" target="Dq1kjeO4wbuGKLS_H0h0-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Dq1kjeO4wbuGKLS_H0h0-15" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=20;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;fontColor=default;gradientColor=none;" value="on the server, accessible via:" vertex="1">
+          <mxGeometry height="70" width="220" x="160" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="Dq1kjeO4wbuGKLS_H0h0-16" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=25;fontFamily=JetBrains Mono;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DJetBrains%2BMono;fontColor=light-dark(#000000,#99CCFF);gradientColor=none;" value="&lt;span style=&quot;font-size: 20px;&quot;&gt;//tsclient/tools&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="220" x="160" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="Dq1kjeO4wbuGKLS_H0h0-21" edge="1" parent="1" source="Dq1kjeO4wbuGKLS_H0h0-15" style="edgeStyle=orthogonalEdgeStyle;shape=connector;curved=1;rounded=0;curveGeometry=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.116;entryY=1.085;entryDx=0;entryDy=0;entryPerimeter=0;strokeColor=default;strokeWidth=2;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=default;startSize=8;endArrow=none;endFill=0;endSize=8;startArrow=blockThin;startFill=0;" target="Dq1kjeO4wbuGKLS_H0h0-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

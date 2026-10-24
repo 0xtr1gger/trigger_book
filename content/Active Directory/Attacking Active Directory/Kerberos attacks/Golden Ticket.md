@@ -1,6 +1,6 @@
 ---
 created: 2026-08-06
-updated: 2026-10-11
+updated: 2026-10-23
 tags:
   - AD
   - AD_attacks
@@ -10,27 +10,32 @@ proofread: yes
 ---
 ## Golden Ticket
 
-> A **Golden Ticket** attack is a post-exploitation technique in which an attacker who holds the **`krbtgt` account's long-term key** forges **Kerberos Ticket Granting Tickets (TGTs)** to impersonate arbitrary users, assign them arbitrary group memberships, and set an arbitrary ticket lifetime.
+- In response to `AS-REQ`, following successful authentication, the KDC responds with an `AS-REP` that carries a TGT (Ticket-Granting Ticket).
 
-- The attack abuses the fact that every TGT is **encrypted and signed with the `krbtgt` account's key**.
-- The KDC uses this same key to validate any TGT presented to it. 
-- Whoever holds the `krbtgt` key can therefore **create a TGT the KDC will accept as its own**.
+>[!note] See [[Kerberos#1. AS exchange (KRBASREQ / KRBASREP)]].
 
->[!important] A NT, AES-128, or AES-256 hash of the `krgtgt` account is sufficient for the attack.
-
->[!note] See [[Kerberos#krbtgt account]]. 
-
-- Each TGT contains a PAC (Privilege Attribute Certificate), a ticket structure that records the user's identity and group memberships. The PAC is signed with the `krbtgt` key.
-- Since you author and sign that PAC, you control every authorization field inside the ticket: you can claim to be `Administrator`, a member of `Domains Admins` or `Enterprise Admins`, or the holder of any SID.
+- The TGT contains a PAC (Privilege Attribute Certificate), a data structure that carries the user's identity and group memberships.
 
 >[!note] See [[Kerberos#Privilege Attribute Certificate (PAC)]].
 
->[!note] The forged TGT is called a **Golden Ticket**.
+- The PAC s **signed an encrypted with the long-term key of the `krbtgt` account**.
+
+>[!note] See [[Kerberos#krbtgt account]].
+
+- If you gain access to the `krbtgt` account's long-term key, or its NT, AES-128, or AES-256 hash, you can **forge TGTs to impersonate arbitrary domain users**, assign them any group memberships, for any ticket lifetime.
+- Since you author and sign that PAC, you control every authorization field inside the cket: you can claim to be `Administrator`, a member of `Domains Admins` or `Enterprise Admins`, or the htiolder of any SID.
+- Such forged TGT is called a **Golden Ticket**.
+
+> A **Golden Ticket** attack is a post-exploitation technique in which an attacker who holds the **`krbtgt` account's long-term key** forges **Kerberos Ticket Granting Tickets (TGTs)** to impersonate arbitrary users, assign them arbitrary group memberships, and set an arbitrary ticket lifetime.
 
 - In other words, you can forge a credential that grants **domain-wide access to any Kerberos service**. 
-- It survives password resets of the impersonated user and remains valid until the `krbtgt` password is reset **twice** (AD keeps both the current and previous `krbtgt` keys; after just one reset, KDC still accepts tickets signed with the old one).
+- It survives password resets of the impersonated user and remains valid until the `krbtgt` password is reset **twice**.
 
->[!note] See [[Kerberos]].
+>[!note]+ Why `krbtgt`'s password must be reset twice 
+> - Changing the `krbtgt` account's password must be done twice, and it can't be done in rapid succession.
+> - AD keeps both the current and previous `krbtgt` keys; after just one reset, KDC still accepts tickets signed with the old one).
+
+- Forging a golden ticket is an excellent technique to maintain persistence within an AD environment.
 
 > [!note] A Golden Ticket is a **post-exploitation** technique. Obtaining the `krbtgt` key already requires **DC- or `Domain Admin`-level access** (e.g., via [[DCSync]] or dumping `NTDS.dit`).
 
@@ -40,12 +45,11 @@ proofread: yes
 > 
 >>[!note] See [[Silver Ticket]].
 
-- Prerequisites for the attack:
-	- The **`krbtgt` account's long-term key** — its NT hash (RC4) or, preferably, its AES-128/AES-256 key.
-	- The **domain SID** (the domain's security identifier, e.g. `S-1-5-21-3842939050-3880317879-2865463114`).
-	- The **domain FQDN** (e.g. `example.com`) and a target **username** to impersonate.
-	- To use the ticket, you need to be able to reach the DC (port `88`) and the target service. 
-	- The DNS must be configured correctly (Kerberos requires FQDNs to operate).
+
+
+
+
+
 
 >[!important] The forged TGT is obtained offline, not through an AS exchange with the KDC. You inject the ticket directly into the Kerberos cache and proceed straight to the TGS exchange.
 
@@ -337,3 +341,12 @@ ticketer.py -nthash <child_krbtgt_hash> -domain-sid <child_domain_SID> -extra-si
 - [`Event 4769 — A Kerberos service ticket was requested — Microsoft Learn`](https://learn.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4769)
 
 
+
+
+
+- Prerequisites for the attack:
+	- The **`krbtgt` account's long-term key** — its NT hash (RC4) or, preferably, its AES-128/AES-256 key.
+	- The **domain SID** (the domain's security identifier, e.g. `S-1-5-21-3842939050-3880317879-2865463114`).
+	- The **domain FQDN** (e.g. `example.com`) and a target **username** to impersonate.
+	- To use the ticket, you need to be able to reach the DC (port `88`) and the target service. 
+	- The DNS must be configured correctly (Kerberos requires FQDNs to operate).

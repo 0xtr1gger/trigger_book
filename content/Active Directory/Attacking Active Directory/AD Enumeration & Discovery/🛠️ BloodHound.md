@@ -1,6 +1,6 @@
 ---
 created: 2026-08-15
-updated: 2026-10-14
+updated: 2026-10-19
 tags:
   - AD
   - AD_attacks
@@ -28,7 +28,7 @@ tags:
 
 ---
 
-- As of version 4.0, BloodHound also supports supports Azure. 
+>[!info] As of version 4.0, BloodHound also supports supports Azure. 
 
 >[!note]- BloodHound editions 
 > - **[BloodHound Legacy](https://github.com/SpecterOps/BloodHound-Legacy)**
@@ -43,7 +43,7 @@ tags:
 
 ## Installation and setup
 
-- BloodHound CE is not a single binary; it runs as a **stack of Docker containers** orchestrated by Docker Compose:
+- BloodHound runs as a **stack of Docker containers** orchestrated by Docker Compose:
 
 | Container        | Description                                                                                                 |
 | ---------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -197,7 +197,6 @@ docker ps
 ```
 
 >[!warning] The graph and all collected AD objects and relations are stored in **Docker volumes**. Removing the volumes (`docker compose down -v`, `docker volume rm ...`) permanently deletes the entire BloodHound database.  
-
 
 ## Collecting data for BloodHound
 

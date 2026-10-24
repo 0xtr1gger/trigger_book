@@ -1,10 +1,12 @@
 ---
 created: 2026-08-22
-updated: 2026-10-12
+updated: 2026-10-24
 tags:
   - AD
   - Kerberos
 ---
+
+- The **Kerberos double-hop** problem occurs when a user authenticates to a first server, but that server can't forward the user's credentials to access the second server. This happens because Kerberos doesn't automatically cache or forward TGTs (Ticket-Granting Tickets) for security reasons. 
 ## Kerberos double hop problem
 
 - In Kerberos, when a user authenticates to one host (the **first hop**), and then a process on that host tries to reach another nost (**second hop**) as the same user, the authentication fails — because the first host holds no credentials it can present on the user's behalf.

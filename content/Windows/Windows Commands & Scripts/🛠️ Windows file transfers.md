@@ -1,6 +1,6 @@
 ---
 created: 2026-08-23
-updated: 2026-10-04
+updated: 2026-10-20
 ---
 ### Table of content
 
@@ -709,40 +709,18 @@ cscript download.js
 ## RDP-based file transfers 
 
 If you have Remote Desktop Protocol (RDP) access, you can use its built-in features to transfer files — clipboard sharing and drive redirection.
+
+>[!note] See [[Connecting via RDP]].
+
 ### RDP clipboard sharing
 
-- Connect with clipboard sharing from Linux (`xfreerdp`):
-
-```bash
-xfreerdp /v:<target> /u:Administrator /p:password /clipboard /dynamic-resolution
-```
-
-The `/clipboard` parameter enables clipboard sharing between your local machine and the RDP session.
-
-- `rdesktop`:
-
-```bash
-rdesktop -r clipboard:PRIMARYCLIPBOARD <target>
-```
-
-Clipboard sharing in Windows RDP client is **enabled by default**.
+- With clipboard redirection enabled (`+clipboard` in `xfreerdp`, `-r clipboard:` in `rdesktop`), copy-paste moves text directly between the local machine and the RDP session. Clipboard sharing is **enabled by default** in the Windows RDP client (`mstsc`).
 
 >[!note] To transfer binaries, Base64-encode first; refer to [[#Base64 encoding and manual transfers]].
 
 ### RDP drive sharing
 
-You can mount your local filesystem as a network drive in the RDP session:
-
-- Mount a local directory as a drive on the RDP session from Linux (`xfreerdp`):
-
-```bash
-xfreerdp /v:<target> /u:Administrator /p:password /drive:share,/path/to/local/dir /dynamic-resolution
-
-```
-
-The `/drive:share,/path/to/local/dir` parameter mounts your specified local directory as a network share named `share` inside the RDP session.
-
-- In the RDP session, access via:
+- With a local directory mounted as a redirected drive (`/drive:share,<path>` in `xfreerdp`), access it inside the RDP session under `\\tsclient`:
 
 ```powershell
 dir \\tsclient\share

@@ -1,6 +1,6 @@
 ---
 created: 2026-09-04
-updated: 2026-10-09
+updated: 2026-10-20
 ---
 
 >[!abstract]+ **Scope**: Remote password brute-forcing and credential spraying against network services; Hydra, NetExec, Medusa syntax per protocol; post-authentication connection commands.
@@ -152,9 +152,7 @@ medusa -h <target> -U <user_list> -P <pass_list> -M rdp
 
 ### Connecting after a successful brute-force
 
-```bash
-xfreerdp /v:<target> /u:<user> /p:<pass>
-```
+>[!note] See [[Connecting via RDP]].
 
 - Another tool for RDP brute-forcing is Crowbar: `crowbar -b rdp -s <target>/32 -u <user> -C <passlist>`
 

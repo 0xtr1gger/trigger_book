@@ -1,60 +1,16 @@
 ---
 created: 2026-09-22
-updated: 2026-10-11
+updated: 2026-10-20
 tags:
   - services_n_protocols
 ---
->[!note] See [[Privileged remote access]].
+>[!note] See [[Connecting via RDP]] and [[Privileged remote access]].
 ## RDP
 
 >**[Remote Desktop Protocol (RDP)](https://en.wikipedia.org/wiki/Remote_Desktop_Protocol)** is a [Microsoft-proprietary](https://learn.microsoft.com/en-us/troubleshoot/windows-server/remote/understanding-remote-desktop-protocol) application-layer protocol that lets a user connect to and control another computer over the network through a graphical session.
 
-- RDP is one of the most widely deployed administrative tools and is installed on Windows by default.
-- It is also one of the most commonly exploited remote-access vectors, both through weak credentials and through protocol-level vulnerabilities.
-- RDP follows a **client-server model**:
-	- The **client** initiates the connection and renders the remote graphical session locally.
-	- The **server** is the Windows host that accepts the connection and serves the session.
-
->[!important] By default, RDP listens on **TCP port `3389`**.
->- Starting with RDP 8.0 (Windows 8 / Server 2012), **UDP port `3389`** is also supported for performance acceleration.
->- When both are available, **RDP prefers UDP** and falls back to TCP on failure.
-
-- The protocol multiplexes several **virtual channels** within a single connection, each carrying a distinct feature such as display data, audio, clipboard content, drive redirection, or printer traffic.
-- Beyond screen, keyboard, and mouse, RDP supports:
-	- **Clipboard sharing** — bidirectional copy-paste between client and server.
-	- **Drive redirection** — mount local directories as network shares inside the remote session.
-	- **Printer redirection** — print from the remote session to a local printer.
-	- **Port redirection** — tunnel arbitrary TCP connections through the RDP session.
-	- **Audio redirection** — play remote audio locally or forward the local microphone to the server.
-	- **32-bit color and dynamic resolution.**
-
-### RDP ports
-
-| Port       | Protocol  | Description                                                                            |
-| ---------- | --------- | ------------------------------------------------------------------------------------- |
-| `3389/tcp` | RDP (TCP) | **Default RDP listener**, secured with TLS and Network Level Authentication (NLA).     |
-| `3389/udp` | RDP (UDP) | **Performance-acceleration transport** (RDP 8.0+); RDP prefers it and falls back to TCP. |
-
-### How RDP works
-
-- Modern RDP sessions are secured with **TLS** and **Network Level Authentication (NLA)**.
-- The protocol is based on the ITU-T T.128 application-sharing standard and multiplexes display, input, clipboard, audio, and redirection traffic over separate virtual channels within one connection.
-
-#### RDP authentication and NLA
-
->**[Network Level Authentication (NLA)](https://en.wikipedia.org/wiki/Remote_Desktop_Services#Network_Level_Authentication)** is an RDP security feature that requires the user to authenticate before a remote desktop session is established.
-
->[!note] Before NLA, connecting to an RDP server loaded a full Windows login screen, meaning the server rendered a graphical session for *every incoming connection*, authenticated or not. This was exploitable (denial-of-service, [BlueKeep](https://en.wikipedia.org/wiki/BlueKeep)), and NLA was Microsoft's mitigation.
-
-- With NLA, the server verifies the user's credentials through the **Credential Security Support Provider (`CredSSP`)** protocol during the *initial connection negotiation*, before any session is served.
-- This prevents the login screen from loading for unauthorized attempts and ensures that only authenticated users reach the remote host.
-
->[!note] NLA is enabled by default on Windows Vista / Server 2008 and later.
-
->[!note]+ Besides `CredSSP`, RDP can authenticate with:
-> - **Kerberos** — on domain-joined hosts when a KDC is reachable.
-> - **NTLM** — the fallback when Kerberos is unavailable; used for workgroup machines or cross-domain connections.
-> - **Local accounts** — on standalone, workgroup hosts.
+- RDP is one of the most commonly used Windows administrative tools. It is installed by default on all Windows versions; on most editions, however, the RDP server (the capability to accept incoming connections) is disabled by default.
+- By default, RDP listens on **TCP and UDP port `3389`** and secures sessions with **TLS** and **Network Level Authentication (NLA)**.
 
 >[!important] By default, only members of the **`Administrators`** and **`Remote Desktop Users`** groups can log on through RDP.
 
@@ -229,136 +185,7 @@ crowbar -b rdp -s 10.10.11.5/32 -U usernames.txt -C /usr/share/wordlists/rockyou
 
 ## Connecting over RDP
 
->[!note] See [[Privileged remote access#RDP]] for the full client reference, including native Windows connections with `mstsc.exe`.
-
-- From Linux, connect to an RDP server with [`xfreerdp`](https://www.freerdp.com/), [`Remmina`](https://remmina.org/) (GUI), or the older [`rdesktop`](http://www.rdesktop.org/).
-
->[!tip]+ On Wayland, use [`wlfreerdp`](https://manpages.debian.org/testing/freerdp2-wayland/wlfreerdp.1.en.html) instead of `xfreerdp`.
-
-- Connect to a Windows host:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123'
-```
-
-- Enable clipboard redirection:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' +clipboard
-```
-
-- Enable audio output redirection:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /sound:sys:alsa
-```
-
-- Enable dynamic resolution:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /dynamic-resolution
-```
-
-- Mount a local directory as a redirected drive in the remote session:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /drive:loot,/tmp
-```
-
-- Ignore TLS certificate validation errors:
-
-```bash
-xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /cert:ignore
-```
-
->[!interesting]- Linux audio backends and RDP audio redirection
->```bash
->/sound[:sys:<backend>,dev:<device>,...]
->```
->- The `/sound` option enables **audio output redirection**: audio from the remote Windows machine plays on the local Linux machine.
->- For example, `/sound:sys:alsa` enables redirection (`/sound`) using the **ALSA backend** (`sys:alsa`).
->
->An **audio backend** on Linux is the software layer that handles audio playback and routing between applications and hardware. Common backends:
->- ALSA (`sys:alsa`) — low-level Linux sound system with direct hardware access.
->- PulseAudio (`sys:pulse`) — PulseAudio sound server; the default on Ubuntu, Kali, and similar.
->- PipeWire (`sys:pipewire`) — modern replacement for PulseAudio (often compatible via `pulse`).
->
->`xfreerdp` chooses PulseAudio by default when it is available.
-
->[!interesting]- Drive redirection
->```bash
->/drive:<name>,<local_path>
->```
->- The `/drive` option enables **drive redirection**, making local files and directories appear inside the remote RDP session.
->- Redirected drives appear under `\\tsclient` (open Explorer and type `\\tsclient`) and under `This PC` → `Redirected drives and folders`.
->- For example, `/drive:home,/home/user` redirects the local `/home/user` directory into the session as a drive named `home`.
->- To redirect *all* local drives (potentially risky), use `/drives`.
-
-### `xfreerdp` option reference
-
-- Core connection settings:
-
-| Option                          | Description                                                                    |
-| ------------------------------- | ------------------------------------------------------------------------------ |
-| `/v:server[:port]`              | Specify the target RDP server hostname, IP address, or URL with optional port. |
-| `/u:[domain\user\|user@domain]` | Specify the username for authentication.                                       |
-| `/p:password`                   | Specify the password for authentication.                                       |
-| `/d:domain`                     | Specify the authentication domain.                                             |
-| `/port:port`                    | Specify the port when it is not included in `/v:`.                             |
-
-- Authentication and session control:
-
-| Option                    | Description                                                      |
-| ------------------------- | ---------------------------------------------------------------- |
-| `/admin` or `/console`    | Connect to the admin (console) session of the server.            |
-| `+auth-only`              | Perform authentication without establishing a full session.      |
-| `/auth-pkg-list:`         | Filter the allowed authentication packages, such as NTLM or Kerberos. |
-| `+credentials-delegation` | Enable credential delegation to the server.                      |
-| `/pth:hash`               | Authenticate with an NT hash (Pass-the-Hash, Restricted Admin Mode). |
-| `/restricted-admin`       | Connect in Restricted Admin Mode.                                |
-
-- Re-connection and reliability:
-
-| Option                                | Description                                               |
-| ------------------------------------- | --------------------------------------------------------- |
-| `+auto-reconnect`                     | Enable automatic reconnection on connection loss.         |
-| `/auto-reconnect-max-retries:retries` | Set the maximum reconnection attempts (`0` means unlimited). |
-| `/timeout:ms`                         | Adjust the connection timeout for high-latency environments. |
-
-- Display and graphics:
-
-| Option                | Description                                                  |
-| --------------------- | ------------------------------------------------------------ |
-| `/f`                  | Enable fullscreen mode.                                      |
-| `/w:width`            | Set the window width.                                        |
-| `/h:height`           | Set the window height.                                       |
-| `+dynamic-resolution` | Update the resolution when the window is resized.            |
-| `/bpp:depth`          | Set the color depth in bits per pixel.                       |
-| `-wallpaper`          | Disable wallpaper rendering.                                 |
-| `-themes`             | Disable themes.                                              |
-| `/workarea`           | Use the available work area instead of full screen.          |
-
-- Device and resource redirection:
-
-| Option             | Description                                                   |
-| ------------------ | ------------------------------------------------------------- |
-| `/drive:name,path` | Redirect a local directory as a network share.               |
-| `+drives`          | Redirect all mounted drives.                                  |
-| `/clipboard:`      | Configure clipboard redirection behavior and direction.      |
-| `/usb:`            | Redirect USB devices using vendor/product or bus addressing. |
-| `/sound:`          | Redirect audio output to the local machine.                  |
-| `/microphone:`     | Redirect the local microphone to the server.                 |
-
-- Security and encryption:
-
-| Option                 | Description                                                                 |
-| ---------------------- | --------------------------------------------------------------------------- |
-| `/cert:`               | Control certificate validation behavior (`ignore`, `deny`, `tofu`, `fingerprint`). |
-| `/encryption-methods:` | Specify the allowed RDP encryption methods (`40`, `56`, `128`, `FIPS`).     |
-| `+fipsmode`            | Enable FIPS mode.                                                           |
-| `/tls:`                | Configure TLS settings, including ciphers and protocol versions.            |
-
->[!note] See [`xfreerdp — man page`](https://man.archlinux.org/man/extra/freerdp/xfreerdp3.1.en) for the complete option list.
+>[!note] See [[Connecting via RDP]].
 
 ## Restricted Admin Mode and Pass-the-Hash attacks
 
@@ -366,12 +193,7 @@ xfreerdp /v:10.10.11.5 /u:jdoe /p:'passwd123' /cert:ignore
 - Instead of an interactive logon, the mode forces a **network logon**, so the remote host does not store the user's plaintext credentials in memory.
 - This mitigates credential theft from a compromised server, but it also enables **Pass-the-Hash against the RDP protocol itself**: an NT hash becomes sufficient to authenticate interactively.
 
-- With Restricted Admin Mode enabled on the target and an NT hash in hand, authenticate with `xfreerdp` ([[Pass-the-Hash]]):
-
-```bash
-xfreerdp /v:10.10.11.5 /u:Administrator /pth:2b576acfd5e0c865136732c44b49b6b1 /restricted-admin /cert:ignore
-```
-
+- With Restricted Admin Mode enabled on the target and an NT hash in hand, authenticate interactively with `xfreerdp /pth /restricted-admin` ([[Pass-the-Hash]], [[Connecting via RDP#Pass-the-Hash]]).
 - Enabling Restricted Admin Mode on a target requires existing administrative access and a registry change:
 
 ```powershell
@@ -379,7 +201,6 @@ reg add HKLM\System\CurrentControlSet\Control\Lsa /t REG_DWORD /v DisableRestric
 ```
 
 - Setting `DisableRestrictedAdmin` to `0` *enables* Restricted Admin Mode. Once set, authentication with an NT hash is accepted in place of a password.
-
 
 ## References and further reading
 

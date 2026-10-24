@@ -3,7 +3,7 @@ created: 2026-02-20
 tags:
   - Windows
 status: complete
-updated: 2026-09-20
+updated: 2026-10-24
 ---
 ## Access tokens and impersonation
 
@@ -108,7 +108,7 @@ updated: 2026-09-20
 - The `SecurityDelegation` level can allow the client's security context to be used on remote systems (typically used in Kerberos delegation scenarios).
 - When a user connects to a service configured for delegation, the server receives a credential structure or ticket that can request secondary Kerberos service tickets for remote network resources **as the user**.
 
-> [!note] See [[Kerberos#Kerberos delegation]] and [[◯ RBCD attacks]].
+> [!note] See [[Kerberos#Kerberos delegation]] and [[Unconstrained delegation]].
 
 ## Token privileges and security contexts
 
